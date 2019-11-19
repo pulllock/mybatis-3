@@ -27,11 +27,19 @@ import org.apache.ibatis.reflection.invoker.Invoker;
 import org.apache.ibatis.reflection.property.PropertyTokenizer;
 
 /**
+ * 普通对象的ObjectWrapper实现类
  * @author Clinton Begin
  */
 public class BeanWrapper extends BaseWrapper {
 
+  /**
+   * 普通对象
+   */
   private final Object object;
+
+  /**
+   * 对象的类的元数据
+   */
   private final MetaClass metaClass;
 
   public BeanWrapper(MetaObject metaObject, Object object) {
@@ -42,6 +50,7 @@ public class BeanWrapper extends BaseWrapper {
 
   @Override
   public Object get(PropertyTokenizer prop) {
+    // 获得集合类型的属性的指定位置的值，比如User对象的list[0]
     if (prop.getIndex() != null) {
       Object collection = resolveCollection(prop, object);
       return getCollectionValue(prop, collection);

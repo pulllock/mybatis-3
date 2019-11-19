@@ -23,6 +23,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 参数名工具类
+ * 获得构造方法、普通方法的参数列表
+ */
 public class ParamNameUtil {
   public static List<String> getParamNames(Method method) {
     return getParameterNames(method);

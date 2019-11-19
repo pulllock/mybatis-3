@@ -28,6 +28,9 @@ import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
+/**
+ * 参数名解析器
+ */
 public class ParamNameResolver {
 
   public static final String GENERIC_NAME_PREFIX = "param";
