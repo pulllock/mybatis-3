@@ -41,19 +41,43 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 /**
+ * 基于Java XPath，解析mybatis-config.xml以及各种Mapper.xml等xml配置文件
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
 public class XPathParser {
 
+  /**
+   * xml被解析后生成的Document对象
+   */
   private final Document document;
+
+  /**
+   * 是否校验
+   */
   private boolean validation;
+
+  /**
+   * xml实体解析器，默认情况下，对XML进行校验时，会基于XML文档开始位置指定的DTD文件或XSD文件。
+   * 一般是从网络位置加载。MyBatis自定义了EntityResolver的实现，达到使用本地DTD文件，从而避免下载网络DTD文件的效果。
+   */
   private EntityResolver entityResolver;
+
+  /**
+   * 变量，属性，用来替换需要动态配置的属性值。
+   * 来源可以在Java Properties文件中配置，也可以在MyBatis的<property/>标签中配置。
+   */
   private Properties variables;
+
+  /**
+   * Java的XPath对象，用于查询XML中的节点和元素。
+   */
   private XPath xpath;
 
   public XPathParser(String xml) {
+    // 公用构造方法
     commonConstructor(false, null, null);
+    // xml文件解析成Document对象
     this.document = createDocument(new InputSource(new StringReader(xml)));
   }
 
@@ -141,7 +165,9 @@ public class XPathParser {
   }
 
   public String evalString(Object root, String expression) {
+    // 获得值
     String result = (String) evaluate(expression, root, XPathConstants.STRING);
+    // 基于variables替换动态的值
     result = PropertyParser.parse(result, variables);
     return result;
   }
@@ -198,6 +224,12 @@ public class XPathParser {
     return evalNodes(document, expression);
   }
 
+  /**
+   * 获得Node类型节点的值
+   * @param root
+   * @param expression
+   * @return
+   */
   public List<XNode> evalNodes(Object root, String expression) {
     List<XNode> xnodes = new ArrayList<>();
     NodeList nodes = (NodeList) evaluate(expression, root, XPathConstants.NODESET);
@@ -219,6 +251,13 @@ public class XPathParser {
     return new XNode(this, node, variables);
   }
 
+  /**
+   * 获得指定元素或节点的值
+   * @param expression 表达式
+   * @param root 指定节点
+   * @param returnType 返回类型
+   * @return 返回值
+   */
   private Object evaluate(String expression, Object root, QName returnType) {
     try {
       return xpath.evaluate(expression, root, returnType);
@@ -227,11 +266,18 @@ public class XPathParser {
     }
   }
 
+  /**
+   * 根据xml文件创建Document对象
+   * @param inputSource
+   * @return
+   */
   private Document createDocument(InputSource inputSource) {
     // important: this must only be called AFTER common constructor
     try {
+      // 创建DocumentBuilderFactory对象
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
       factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+      // 是否验证
       factory.setValidating(validation);
 
       factory.setNamespaceAware(false);
@@ -240,7 +286,9 @@ public class XPathParser {
       factory.setCoalescing(false);
       factory.setExpandEntityReferences(true);
 
+      // 创建DocumentBuilder对象
       DocumentBuilder builder = factory.newDocumentBuilder();
+      // 实体解析器
       builder.setEntityResolver(entityResolver);
       builder.setErrorHandler(new ErrorHandler() {
         @Override
@@ -258,6 +306,7 @@ public class XPathParser {
           // NOP
         }
       });
+      // 解析xml文件
       return builder.parse(inputSource);
     } catch (Exception e) {
       throw new BuilderException("Error creating document instance.  Cause: " + e, e);

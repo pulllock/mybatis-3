@@ -15,5 +15,8 @@
  */
 /**
  * Parsing utils
+ * 解析器
+ * 1. 对XPath进行封装，为mybatis-config.xml配置文件以及映射配置文件提供支持。
+ * 2. 为处理动态sql语句中的占位符提供支持。
  */
 package org.apache.ibatis.parsing;
