@@ -45,19 +45,30 @@ public class MetaClass {
   }
 
   public MetaClass metaClassForProperty(String name) {
+    // 获得getting方法返回的类型
     Class<?> propType = reflector.getGetterType(name);
+    // 创建MetaClass对象
     return MetaClass.forClass(propType, reflectorFactory);
   }
 
   public String findProperty(String name) {
+    // 构建属性
     StringBuilder prop = buildProperty(name, new StringBuilder());
     return prop.length() > 0 ? prop.toString() : null;
   }
 
+  /**
+   * 获得属性
+   * @param name
+   * @param useCamelCaseMapping
+   * @return
+   */
   public String findProperty(String name, boolean useCamelCaseMapping) {
+    // 下划线转驼峰
     if (useCamelCaseMapping) {
       name = name.replace("_", "");
     }
+    // 获得属性
     return findProperty(name);
   }
 
@@ -90,11 +101,14 @@ public class MetaClass {
   }
 
   private MetaClass metaClassForProperty(PropertyTokenizer prop) {
+    // 获得getting方法返回的类型
     Class<?> propType = getGetterType(prop);
+    // 创建MetaClass对象
     return MetaClass.forClass(propType, reflectorFactory);
   }
 
   private Class<?> getGetterType(PropertyTokenizer prop) {
+    // 获得返回类型
     Class<?> type = reflector.getGetterType(prop.getName());
     if (prop.getIndex() != null && Collection.class.isAssignableFrom(type)) {
       Type returnType = getGenericGetterType(prop.getName());
@@ -132,16 +146,26 @@ public class MetaClass {
     return null;
   }
 
+  /**
+   * 判断属性是否有getting方法
+   * @param name
+   * @return
+   */
   public boolean hasSetter(String name) {
+    // 先对name进行分词
     PropertyTokenizer prop = new PropertyTokenizer(name);
+    // 有子表达式
     if (prop.hasNext()) {
+      // 判断是否有getting方法
       if (reflector.hasSetter(prop.getName())) {
         MetaClass metaProp = metaClassForProperty(prop.getName());
+        // 递归子表达式
         return metaProp.hasSetter(prop.getChildren());
       } else {
         return false;
       }
     } else {
+      // 无子表达式
       return reflector.hasSetter(prop.getName());
     }
   }
@@ -169,16 +193,21 @@ public class MetaClass {
   }
 
   private StringBuilder buildProperty(String name, StringBuilder builder) {
+    // 对name进行分词
     PropertyTokenizer prop = new PropertyTokenizer(name);
+    // 有子表达式
     if (prop.hasNext()) {
+      // 从caseInsensitivePropertyMap中获取属性名
       String propertyName = reflector.findPropertyName(prop.getName());
       if (propertyName != null) {
         builder.append(propertyName);
         builder.append(".");
         MetaClass metaProp = metaClassForProperty(propertyName);
+        // 递归解析子表达式
         metaProp.buildProperty(prop.getChildren(), builder);
       }
     } else {
+      // 无子表达式
       String propertyName = reflector.findPropertyName(name);
       if (propertyName != null) {
         builder.append(propertyName);
