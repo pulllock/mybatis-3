@@ -23,6 +23,7 @@ import java.util.StringJoiner;
 import org.apache.ibatis.reflection.ArrayUtil;
 
 /**
+ * MyBatis中缓存建不是一个简单String，而是通过多个对象组成的
  * @author Clinton Begin
  */
 public class CacheKey implements Cloneable, Serializable {

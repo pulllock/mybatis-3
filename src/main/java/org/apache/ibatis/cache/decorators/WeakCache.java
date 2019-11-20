@@ -25,11 +25,19 @@ import org.apache.ibatis.cache.Cache;
 /**
  * Weak Reference cache decorator.
  * Thanks to Dr. Heinz Kabutz for his guidance here.
+ * 基于WeakReference实现的缓存
  *
  * @author Clinton Begin
  */
 public class WeakCache implements Cache {
+  /**
+   * 强引用的键的队列
+   */
   private final Deque<Object> hardLinksToAvoidGarbageCollection;
+
+  /**
+   * 被GC回收的
+   */
   private final ReferenceQueue<Object> queueOfGarbageCollectedEntries;
   private final Cache delegate;
   private int numberOfHardLinks;
@@ -48,6 +56,7 @@ public class WeakCache implements Cache {
 
   @Override
   public int getSize() {
+    // 移除已被回收的
     removeGarbageCollectedItems();
     return delegate.getSize();
   }

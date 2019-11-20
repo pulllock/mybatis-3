@@ -22,13 +22,21 @@ import org.apache.ibatis.cache.Cache;
 
 /**
  * Lru (least recently used) cache decorator.
+ * 基于最少使用的淘汰机制实现的缓存
  *
  * @author Clinton Begin
  */
 public class LruCache implements Cache {
 
   private final Cache delegate;
+  /**
+   * 基于LinkedHashMap实现淘汰机制
+   */
   private Map<Object, Object> keyMap;
+
+  /**
+   * 最老的键
+   */
   private Object eldestKey;
 
   public LruCache(Cache delegate) {
@@ -47,6 +55,10 @@ public class LruCache implements Cache {
   }
 
   public void setSize(final int size) {
+    /**
+     * LinkedHashMap的accessOrder为true时，会按照访问顺序进行排序
+     * 最近访问的放在最前面
+     */
     keyMap = new LinkedHashMap<Object, Object>(size, .75F, true) {
       private static final long serialVersionUID = 4267176411845948333L;
 
@@ -85,6 +97,7 @@ public class LruCache implements Cache {
   }
 
   private void cycleKeyList(Object key) {
+    // 添加到keyMap中
     keyMap.put(key, key);
     if (eldestKey != null) {
       delegate.removeObject(eldestKey);
