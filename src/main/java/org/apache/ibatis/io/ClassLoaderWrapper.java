@@ -20,6 +20,8 @@ import java.net.URL;
 
 /**
  * A class to wrap access to multiple class loaders making them work as one
+ * ClassLoader包装器
+ * 可以使用多个ClassLoader加载对应的资源，直到有一个成功返回资源
  *
  * @author Clinton Begin
  */
