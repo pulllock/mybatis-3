@@ -33,6 +33,8 @@ import org.apache.ibatis.io.ResolverUtil;
 import org.apache.ibatis.io.Resources;
 
 /**
+ * 类型与别名的注册表
+ * 在Mapper xml中的resultType和parameterType属性，直接使用，不用写全类名
  * @author Clinton Begin
  */
 public class TypeAliasRegistry {
