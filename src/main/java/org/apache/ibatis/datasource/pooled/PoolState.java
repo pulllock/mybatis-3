@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * 连接池状态
  * @author Clinton Begin
  */
 public class PoolState {
