@@ -20,6 +20,7 @@ import org.apache.ibatis.cache.Cache;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 定时清空整个容器
  * @author Clinton Begin
  */
 public class ScheduledCache implements Cache {

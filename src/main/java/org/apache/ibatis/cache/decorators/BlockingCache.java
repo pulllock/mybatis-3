@@ -30,6 +30,7 @@ import org.apache.ibatis.cache.CacheException;
  * It sets a lock over a cache key when the element is not found in cache.
  * This way, other threads will wait until this element is filled instead of hitting the database.
  *
+ * 阻塞的缓存实现类，当线程获取缓存时，如果不存在，则会阻塞后续的其他线程去获取该缓存
  * @author Eduardo Macarron
  *
  */

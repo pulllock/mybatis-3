@@ -22,12 +22,16 @@ import org.apache.ibatis.cache.Cache;
 
 /**
  * FIFO (first in, first out) cache decorator.
+ * 基于先进先出的缓存实现类
  *
  * @author Clinton Begin
  */
 public class FifoCache implements Cache {
 
   private final Cache delegate;
+  /**
+   * 双端队列，记录键的添加
+   */
   private final Deque<Object> keyList;
   private int size;
 
