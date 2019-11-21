@@ -54,8 +54,19 @@ import org.apache.ibatis.type.TypeHandler;
  */
 public class MapperBuilderAssistant extends BaseBuilder {
 
+  /**
+   * 当前Mapper的namespace
+   */
   private String currentNamespace;
+
+  /**
+   * 资源引用
+   */
   private final String resource;
+
+  /**
+   * 当前Cache对象
+   */
   private Cache currentCache;
   private boolean unresolvedCacheRef; // issue #676
 
@@ -173,6 +184,16 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .build();
   }
 
+  /**
+   * 创建ResultMap对象，添加到Configuration中
+   * @param id
+   * @param type
+   * @param extend
+   * @param discriminator
+   * @param resultMappings
+   * @param autoMapping
+   * @return
+   */
   public ResultMap addResultMap(
       String id,
       Class<?> type,
@@ -180,7 +201,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
       Discriminator discriminator,
       List<ResultMapping> resultMappings,
       Boolean autoMapping) {
+    // 获得编号，'${namespace}.${id}'
     id = applyCurrentNamespace(id, false);
+    // 获得完整的extend属性，${namespace}.${extend}
     extend = applyCurrentNamespace(extend, true);
 
     if (extend != null) {
@@ -203,6 +226,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
       }
       resultMappings.addAll(extendedResultMappings);
     }
+    // 创建ResultMap对象
     ResultMap resultMap = new ResultMap.Builder(configuration, id, type, resultMappings, autoMapping)
         .discriminator(discriminator)
         .build();
@@ -370,20 +394,24 @@ public class MapperBuilderAssistant extends BaseBuilder {
       boolean lazy) {
     Class<?> javaTypeClass = resolveResultJavaType(resultType, property, javaType);
     TypeHandler<?> typeHandlerInstance = resolveTypeHandler(javaTypeClass, typeHandler);
+    // 解析组合字段名称成ResultMapping集合，涉及关联的嵌套查询
     List<ResultMapping> composites;
     if ((nestedSelect == null || nestedSelect.isEmpty()) && (foreignColumn == null || foreignColumn.isEmpty())) {
       composites = Collections.emptyList();
     } else {
       composites = parseCompositeColumnName(column);
     }
+    // 创建ResultMapping对象
     return new ResultMapping.Builder(configuration, property, column, javaTypeClass)
         .jdbcType(jdbcType)
+      // 拼接namespace
         .nestedQueryId(applyCurrentNamespace(nestedSelect, true))
         .nestedResultMapId(applyCurrentNamespace(nestedResultMap, true))
         .resultSet(resultSet)
         .typeHandler(typeHandlerInstance)
         .flags(flags == null ? new ArrayList<>() : flags)
         .composites(composites)
+      // 将字符串解析成集合
         .notNullColumns(parseMultipleColumnNames(notNullColumn))
         .columnPrefix(columnPrefix)
         .foreignColumn(foreignColumn)
@@ -407,13 +435,20 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return columns;
   }
 
+  /**
+   * 解析组合字段名称成ResultMapping集合
+   * @param columnName
+   * @return
+   */
   private List<ResultMapping> parseCompositeColumnName(String columnName) {
     List<ResultMapping> composites = new ArrayList<>();
+    // 分词，解析其中的property和column的组合对
     if (columnName != null && (columnName.indexOf('=') > -1 || columnName.indexOf(',') > -1)) {
       StringTokenizer parser = new StringTokenizer(columnName, "{}=, ", false);
       while (parser.hasMoreTokens()) {
         String property = parser.nextToken();
         String column = parser.nextToken();
+        // 创建ResultMapping对象
         ResultMapping complexResultMapping = new ResultMapping.Builder(
             configuration, property, column, configuration.getTypeHandlerRegistry().getUnknownTypeHandler()).build();
         composites.add(complexResultMapping);
