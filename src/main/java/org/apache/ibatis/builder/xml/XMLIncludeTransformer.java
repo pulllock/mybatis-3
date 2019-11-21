@@ -31,6 +31,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
+ * 将include标签转换成对应sql中的内容
  * @author Frank D. Martinez [mnesarco]
  */
 public class XMLIncludeTransformer {
@@ -52,21 +53,28 @@ public class XMLIncludeTransformer {
 
   /**
    * Recursively apply includes through all SQL fragments.
+   * 将include标签替换成引用的sql标签
    * @param source Include node in DOM tree
    * @param variablesContext Current context for static variables with values
    */
   private void applyIncludes(Node source, final Properties variablesContext, boolean included) {
     if (source.getNodeName().equals("include")) {
+      // 获得refid指定的sql标签
       Node toInclude = findSqlFragment(getStringAttribute(source, "refid"), variablesContext);
+      // 获得include标签内的属性
       Properties toIncludeContext = getVariablesContext(source, variablesContext);
+      // 递归调用替换
       applyIncludes(toInclude, toIncludeContext, true);
       if (toInclude.getOwnerDocument() != source.getOwnerDocument()) {
         toInclude = source.getOwnerDocument().importNode(toInclude, true);
       }
+      // include结点替换成sql结点
       source.getParentNode().replaceChild(toInclude, source);
       while (toInclude.hasChildNodes()) {
+        // 将sql子节点添加到sql结点前面
         toInclude.getParentNode().insertBefore(toInclude.getFirstChild(), toInclude);
       }
+      // 移除include标签
       toInclude.getParentNode().removeChild(toInclude);
     } else if (source.getNodeType() == Node.ELEMENT_NODE) {
       if (included && !variablesContext.isEmpty()) {
@@ -88,11 +96,21 @@ public class XMLIncludeTransformer {
     }
   }
 
+  /**
+   * 获得对应的sql节点
+   * @param refid
+   * @param variables
+   * @return
+   */
   private Node findSqlFragment(String refid, Properties variables) {
+    // refid可能是动态变量，需要替换
     refid = PropertyParser.parse(refid, variables);
+    // 获得完整的refid，格式 '${namespace}.${refid}'
     refid = builderAssistant.applyCurrentNamespace(refid, true);
     try {
+      // 获得sql结点
       XNode nodeToInclude = configuration.getSqlFragments().get(refid);
+      // 获得node进行克隆
       return nodeToInclude.getNode().cloneNode(true);
     } catch (IllegalArgumentException e) {
       throw new IncompleteElementException("Could not find SQL statement to include with refid '" + refid + "'", e);
