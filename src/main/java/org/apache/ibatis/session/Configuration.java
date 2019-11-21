@@ -227,6 +227,7 @@ public class Configuration {
   public void setLogImpl(Class<? extends Log> logImpl) {
     if (logImpl != null) {
       this.logImpl = logImpl;
+      // 添加到自定义VFS类的集合中去
       LogFactory.useCustomLogging(this.logImpl);
     }
   }

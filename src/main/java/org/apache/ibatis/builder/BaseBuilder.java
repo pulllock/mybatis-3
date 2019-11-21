@@ -29,11 +29,24 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 基础构造器抽象类，为子类提供通用的工具类
  * @author Clinton Begin
  */
 public abstract class BaseBuilder {
+
+  /**
+   * Configuration对象
+   */
   protected final Configuration configuration;
+
+  /**
+   * 类型别名注册表
+   */
   protected final TypeAliasRegistry typeAliasRegistry;
+
+  /**
+   * 类型处理器注册表
+   */
   protected final TypeHandlerRegistry typeHandlerRegistry;
 
   public BaseBuilder(Configuration configuration) {
@@ -46,6 +59,12 @@ public abstract class BaseBuilder {
     return configuration;
   }
 
+  /**
+   * 创建正则表达式
+   * @param regex 表达式
+   * @param defaultValue 默认表达式
+   * @return 正则表达式
+   */
   protected Pattern parseExpression(String regex, String defaultValue) {
     return Pattern.compile(regex == null ? defaultValue : regex);
   }
@@ -63,6 +82,11 @@ public abstract class BaseBuilder {
     return new HashSet<>(Arrays.asList(value.split(",")));
   }
 
+  /**
+   * 解析对应的JdbcType类型
+   * @param alias
+   * @return
+   */
   protected JdbcType resolveJdbcType(String alias) {
     if (alias == null) {
       return null;
@@ -74,6 +98,11 @@ public abstract class BaseBuilder {
     }
   }
 
+  /**
+   * 解析对应的ResultSetType类型
+   * @param alias
+   * @return
+   */
   protected ResultSetType resolveResultSetType(String alias) {
     if (alias == null) {
       return null;
@@ -85,6 +114,11 @@ public abstract class BaseBuilder {
     }
   }
 
+  /**
+   * 解析对应ParameterMode类型
+   * @param alias
+   * @return
+   */
   protected ParameterMode resolveParameterMode(String alias) {
     if (alias == null) {
       return null;
@@ -96,12 +130,19 @@ public abstract class BaseBuilder {
     }
   }
 
+  /**
+   * 创建指定对象
+   * @param alias
+   * @return
+   */
   protected Object createInstance(String alias) {
+    // 从typeAliasRegistry中获得对应的类型
     Class<?> clazz = resolveClass(alias);
     if (clazz == null) {
       return null;
     }
     try {
+      // 创建对象
       return resolveClass(alias).getDeclaredConstructor().newInstance();
     } catch (Exception e) {
       throw new BuilderException("Error creating instance. Cause: " + e, e);
@@ -119,6 +160,12 @@ public abstract class BaseBuilder {
     }
   }
 
+  /**
+   * 从typeHandlerRegistry中获得或者创建对应的TypeHandler对象
+   * @param javaType
+   * @param typeHandlerAlias
+   * @return
+   */
   protected TypeHandler<?> resolveTypeHandler(Class<?> javaType, String typeHandlerAlias) {
     if (typeHandlerAlias == null) {
       return null;
