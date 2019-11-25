@@ -28,6 +28,7 @@ public class SetSqlNode extends TrimSqlNode {
   private static final List<String> COMMA = Collections.singletonList(",");
 
   public SetSqlNode(Configuration configuration,SqlNode contents) {
+    // set节点解析后的sql语句片段如果以‘,’结尾，将结尾的,删除，再将set关键字添加到sql片段开始位置
     super(configuration, contents, "SET", COMMA, null, COMMA);
   }
 

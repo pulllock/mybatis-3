@@ -28,6 +28,7 @@ public class WhereSqlNode extends TrimSqlNode {
   private static List<String> prefixList = Arrays.asList("AND ","OR ","AND\n", "OR\n", "AND\r", "OR\r", "AND\t", "OR\t");
 
   public WhereSqlNode(Configuration configuration, SqlNode contents) {
+    // where节点解析后的sql语句片段如果以and或or开头，则将and或or删除，将where添加到sql片段开始位置
     super(configuration, contents, "WHERE", prefixList, null, null);
   }
 

@@ -21,6 +21,10 @@ import java.util.List;
  * @author Clinton Begin
  */
 public class MixedSqlNode implements SqlNode {
+
+  /**
+   * 记录子节点对应的SqlNode对象集合
+   */
   private final List<SqlNode> contents;
 
   public MixedSqlNode(List<SqlNode> contents) {
@@ -29,6 +33,7 @@ public class MixedSqlNode implements SqlNode {
 
   @Override
   public boolean apply(DynamicContext context) {
+    // 循环调用contexts中所有SqlNode对象的apply方法
     contents.forEach(node -> node.apply(context));
     return true;
   }

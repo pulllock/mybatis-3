@@ -27,6 +27,8 @@ import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 用来记录解析动态sql语句之后的产生的sql语句片段
+ * 可认为是一个用于记录动态sql语句解析结果的容器
  * @author Clinton Begin
  */
 public class DynamicContext {
@@ -38,12 +40,25 @@ public class DynamicContext {
     OgnlRuntime.setPropertyAccessor(ContextMap.class, new ContextAccessor());
   }
 
+  /**
+   * 参数上下文
+   */
   private final ContextMap bindings;
+
+  /**
+   * sqlNode解析动态sql时，会将解析后的sql语句片段添加到改属性中保存，最终拼凑出一条完整的sql语句
+   */
   private final StringJoiner sqlBuilder = new StringJoiner(" ");
   private int uniqueNumber = 0;
 
+  /**
+   *
+   * @param configuration
+   * @param parameterObject 包含了后续用于替换'#{}'占位符的实参
+   */
   public DynamicContext(Configuration configuration, Object parameterObject) {
     if (parameterObject != null && !(parameterObject instanceof Map)) {
+      // 非map类型的参数，创建对应的MetaObject对象，并封装成ContextMap对象
       MetaObject metaObject = configuration.newMetaObject(parameterObject);
       boolean existsTypeHandler = configuration.getTypeHandlerRegistry().hasTypeHandler(parameterObject.getClass());
       bindings = new ContextMap(metaObject, existsTypeHandler);

@@ -107,11 +107,11 @@ public class XMLMapperBuilder extends BaseBuilder {
       bindMapperForNamespace();
     }
 
-    // 解析待定的resultMap结点
+    // 处理configurationElement方法中解析失败的resultMap结点
     parsePendingResultMaps();
-    // 解析待定的cache-ref结点
+    // 处理configurationElement方法中解析失败的cache-ref结点
     parsePendingCacheRefs();
-    // 解析待定的SQL语句结点
+    // 处理configurationElement方法中解析失败的SQL语句结点
     parsePendingStatements();
   }
 

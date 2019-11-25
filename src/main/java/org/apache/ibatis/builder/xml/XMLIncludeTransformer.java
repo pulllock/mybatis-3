@@ -44,10 +44,17 @@ public class XMLIncludeTransformer {
     this.builderAssistant = builderAssistant;
   }
 
+  /**
+   * 解析sql语句中的include节点，将include节点替换成sql节点中定义的sql语句，
+   * 并将占位符替换成实际的参数
+   * @param source
+   */
   public void applyIncludes(Node source) {
+    // 获取mybatis-config.xml中properties节点下定义的变量集合
     Properties variablesContext = new Properties();
     Properties configurationVariables = configuration.getVariables();
     Optional.ofNullable(configurationVariables).ifPresent(variablesContext::putAll);
+    // 处理include子节点
     applyIncludes(source, variablesContext, false);
   }
 
@@ -61,9 +68,9 @@ public class XMLIncludeTransformer {
     if (source.getNodeName().equals("include")) {
       // 获得refid指定的sql标签
       Node toInclude = findSqlFragment(getStringAttribute(source, "refid"), variablesContext);
-      // 获得include标签内的属性
+      // 获得include标签内的property节点，将得到的键值对添加到variablesContext中，并形成新的Properties对象返回，用于替换占位符
       Properties toIncludeContext = getVariablesContext(source, variablesContext);
-      // 递归调用替换
+      // 递归处理include节点
       applyIncludes(toInclude, toIncludeContext, true);
       if (toInclude.getOwnerDocument() != source.getOwnerDocument()) {
         toInclude = source.getOwnerDocument().importNode(toInclude, true);

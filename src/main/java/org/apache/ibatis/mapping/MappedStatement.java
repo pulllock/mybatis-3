@@ -29,10 +29,14 @@ import org.apache.ibatis.scripting.LanguageDriver;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 表示映射配置文件中定义的SQL节点
  * @author Clinton Begin
  */
 public final class MappedStatement {
 
+  /**
+   * 节点中id属性，包括命名空间前缀
+   */
   private String resource;
   private Configuration configuration;
   private String id;
@@ -40,6 +44,10 @@ public final class MappedStatement {
   private Integer timeout;
   private StatementType statementType;
   private ResultSetType resultSetType;
+
+  /**
+   * 对应条sql语句
+   */
   private SqlSource sqlSource;
   private Cache cache;
   private ParameterMap parameterMap;
@@ -47,6 +55,10 @@ public final class MappedStatement {
   private boolean flushCacheRequired;
   private boolean useCache;
   private boolean resultOrdered;
+
+  /**
+   * sql类型 insert update delete select flush
+   */
   private SqlCommandType sqlCommandType;
   private KeyGenerator keyGenerator;
   private String[] keyProperties;

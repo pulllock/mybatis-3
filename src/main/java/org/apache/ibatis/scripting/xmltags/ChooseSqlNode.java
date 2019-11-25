@@ -18,6 +18,9 @@ package org.apache.ibatis.scripting.xmltags;
 import java.util.List;
 
 /**
+ * choose标签解析成ChooseSqlNode
+ * when标签解析成IfSqlNode
+ * otherwise标签解析成MixedSqlNode
  * @author Clinton Begin
  */
 public class ChooseSqlNode implements SqlNode {

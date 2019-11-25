@@ -21,6 +21,9 @@ import org.apache.ibatis.mapping.SqlSource;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 处理动态sql语句，最后会将处理后的sql语句封装成StaticSqlSource返回
+ *
+ * 封装的sql还需进行一些列的解析，才可以形成数据库可执行的sql语句
  * @author Clinton Begin
  */
 public class DynamicSqlSource implements SqlSource {

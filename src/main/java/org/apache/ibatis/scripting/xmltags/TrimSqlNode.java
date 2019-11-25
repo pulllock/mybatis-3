@@ -29,10 +29,29 @@ import org.apache.ibatis.session.Configuration;
  */
 public class TrimSqlNode implements SqlNode {
 
+  /**
+   * trim节点的子节点
+   */
   private final SqlNode contents;
+
+  /**
+   * trim节点包裹sql语句添加的前缀
+   */
   private final String prefix;
+
+  /**
+   * trim节点包裹sql语句添加的后缀
+   */
   private final String suffix;
+
+  /**
+   * 如果trim节点包裹的sql语句是空语句，删除指定的前缀，比如where
+   */
   private final List<String> prefixesToOverride;
+
+  /**
+   * 如果trim节点包裹的sql语句是空语句，删除指定的后缀，比如逗号
+   */
   private final List<String> suffixesToOverride;
   private final Configuration configuration;
 
@@ -51,14 +70,18 @@ public class TrimSqlNode implements SqlNode {
 
   @Override
   public boolean apply(DynamicContext context) {
+    // 创建FilteredDynamicContext对象，封装了DynamicContext
     FilteredDynamicContext filteredDynamicContext = new FilteredDynamicContext(context);
+    // 调用子节点的方法进行解析
     boolean result = contents.apply(filteredDynamicContext);
+    // 处理前缀和后缀
     filteredDynamicContext.applyAll();
     return result;
   }
 
   private static List<String> parseOverrides(String overrides) {
     if (overrides != null) {
+      // | 分隔
       final StringTokenizer parser = new StringTokenizer(overrides, "|", false);
       final List<String> list = new ArrayList<>(parser.countTokens());
       while (parser.hasMoreTokens()) {
@@ -71,8 +94,12 @@ public class TrimSqlNode implements SqlNode {
 
   private class FilteredDynamicContext extends DynamicContext {
     private DynamicContext delegate;
+
+    // 是否已经处理过前缀
     private boolean prefixApplied;
+    // 是否已经处理过后缀
     private boolean suffixApplied;
+    // 用于记录子节点解析后的结果
     private StringBuilder sqlBuffer;
 
     public FilteredDynamicContext(DynamicContext delegate) {
@@ -87,7 +114,9 @@ public class TrimSqlNode implements SqlNode {
       sqlBuffer = new StringBuilder(sqlBuffer.toString().trim());
       String trimmedUppercaseSql = sqlBuffer.toString().toUpperCase(Locale.ENGLISH);
       if (trimmedUppercaseSql.length() > 0) {
+        // 处理前缀
         applyPrefix(sqlBuffer, trimmedUppercaseSql);
+        // 处理后缀
         applySuffix(sqlBuffer, trimmedUppercaseSql);
       }
       delegate.appendSql(sqlBuffer.toString());

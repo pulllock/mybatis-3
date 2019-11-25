@@ -40,12 +40,12 @@ public abstract class BaseBuilder {
   protected final Configuration configuration;
 
   /**
-   * 类型别名注册表
+   * 类型别名注册表，全局唯一的，在Configuration对象初始化的时候创建
    */
   protected final TypeAliasRegistry typeAliasRegistry;
 
   /**
-   * 类型处理器注册表
+   * 类型处理器注册表，全局唯一的，在Configuration对象初始化的时候创建
    */
   protected final TypeHandlerRegistry typeHandlerRegistry;
 

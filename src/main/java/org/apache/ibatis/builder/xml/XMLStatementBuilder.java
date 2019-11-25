@@ -62,7 +62,7 @@ public class XMLStatementBuilder extends BaseBuilder {
       return;
     }
 
-    // 获取节点名字，比如select update等-
+    // 获取节点名字，比如select update等
     String nodeName = context.getNode().getNodeName();
     // 获得对应的SqlCommandType
     SqlCommandType sqlCommandType = SqlCommandType.valueOf(nodeName.toUpperCase(Locale.ENGLISH));
@@ -85,7 +85,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     LanguageDriver langDriver = getLanguageDriver(lang);
 
     // Parse selectKey after includes and remove them.
-    // 解析selectKey标签
+    // 解析selectKey标签，用来解决主键自增
     processSelectKeyNodes(id, parameterTypeClass, langDriver);
 
     // Parse the SQL (pre: <selectKey> and <include> were parsed and removed)
@@ -127,7 +127,9 @@ public class XMLStatementBuilder extends BaseBuilder {
   }
 
   private void processSelectKeyNodes(String id, Class<?> parameterTypeClass, LanguageDriver langDriver) {
+    // 获取全部的selectKey节点
     List<XNode> selectKeyNodes = context.evalNodes("selectKey");
+    // 解析selectKey节点
     if (configuration.getDatabaseId() != null) {
       parseSelectKeyNodes(id, selectKeyNodes, parameterTypeClass, langDriver, configuration.getDatabaseId());
     }
@@ -164,6 +166,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     String resultMap = null;
     ResultSetType resultSetTypeEnum = null;
 
+    // 生成SqlSource对象
     SqlSource sqlSource = langDriver.createSqlSource(configuration, nodeToHandle, parameterTypeClass);
     SqlCommandType sqlCommandType = SqlCommandType.SELECT;
 
