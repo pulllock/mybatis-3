@@ -36,28 +36,58 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
 import org.apache.ibatis.type.UnknownTypeHandler;
 
 /**
+ * 记录了ResultSet中的一些元数据，提供了一系列操作ResultSet的辅助方法
  * @author Iwao AVE!
  */
 public class ResultSetWrapper {
 
   private final ResultSet resultSet;
   private final TypeHandlerRegistry typeHandlerRegistry;
+
+  /**
+   * 记录了ResultSet中每列的列名
+   */
   private final List<String> columnNames = new ArrayList<>();
+
+  /**
+   * 记录ResultSet中每列对应的Java类型
+   */
   private final List<String> classNames = new ArrayList<>();
+
+  /**
+   * 记录ResultSet中每列对应的JdbcType类型
+   */
   private final List<JdbcType> jdbcTypes = new ArrayList<>();
+
+  /**
+   * 记录每列对应的TypeHandler对象，key是列名
+   */
   private final Map<String, Map<Class<?>, TypeHandler<?>>> typeHandlerMap = new HashMap<>();
+
+  /**
+   * 记录了被映射的列名，其中key是ResultMap对象的id，value是该ResultMap对象映射的列名集合
+   */
   private final Map<String, List<String>> mappedColumnNamesMap = new HashMap<>();
+
+  /**
+   * 记录了未被映射的列名
+   */
   private final Map<String, List<String>> unMappedColumnNamesMap = new HashMap<>();
 
   public ResultSetWrapper(ResultSet rs, Configuration configuration) throws SQLException {
     super();
     this.typeHandlerRegistry = configuration.getTypeHandlerRegistry();
     this.resultSet = rs;
+    // ResultSet的元信息
     final ResultSetMetaData metaData = rs.getMetaData();
+    // ResultSet中的列数
     final int columnCount = metaData.getColumnCount();
     for (int i = 1; i <= columnCount; i++) {
+      // 获取列名或者是通过as关键字指定的别名
       columnNames.add(configuration.isUseColumnLabel() ? metaData.getColumnLabel(i) : metaData.getColumnName(i));
+      // 该列的JdbcType类型
       jdbcTypes.add(JdbcType.forCode(metaData.getColumnType(i)));
+      // 该列对应的Java类型
       classNames.add(metaData.getColumnClassName(i));
     }
   }
