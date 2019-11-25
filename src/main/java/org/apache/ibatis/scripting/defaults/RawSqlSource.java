@@ -28,7 +28,9 @@ import org.apache.ibatis.session.Configuration;
 /**
  * Static SqlSource. It is faster than {@link DynamicSqlSource} because mappings are
  * calculated during startup.
- * 处理静态语句，最后会将处理后的sql语句封装成StaticSqlSource返回
+ * 处理静态语句，最后会将处理后的sql语句封装成StaticSqlSource返回，在MyBatis初始化时完成sql语句的解析
+ *
+ * 如果只包含'#{}'占位符，而不包含动态sql或未解析的'${}'占位符，则不是动态sql语句
  *
  * @since 3.2.0
  * @author Eduardo Macarron
@@ -38,12 +40,14 @@ public class RawSqlSource implements SqlSource {
   private final SqlSource sqlSource;
 
   public RawSqlSource(Configuration configuration, SqlNode rootSqlNode, Class<?> parameterType) {
+    // 先调用getSql方法，其中会调用SqlNode.apply方法完成sql语句的拼装和初步处理
     this(configuration, getSql(configuration, rootSqlNode), parameterType);
   }
 
   public RawSqlSource(Configuration configuration, String sql, Class<?> parameterType) {
     SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
     Class<?> clazz = parameterType == null ? Object.class : parameterType;
+    // 完成占位符的替换和ParameterMapping的创建
     sqlSource = sqlSourceParser.parse(sql, clazz, new HashMap<>());
   }
 
