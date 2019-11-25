@@ -77,6 +77,10 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   private final MappedStatement mappedStatement;
   private final RowBounds rowBounds;
   private final ParameterHandler parameterHandler;
+
+  /**
+   * 用户指定用于处理结果集的ResultHandler对象
+   */
   private final ResultHandler<?> resultHandler;
   private final BoundSql boundSql;
   private final TypeHandlerRegistry typeHandlerRegistry;
