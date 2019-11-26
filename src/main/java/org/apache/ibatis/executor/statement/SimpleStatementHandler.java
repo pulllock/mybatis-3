@@ -33,6 +33,8 @@ import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
 /**
+ * 底层使用java.sql.Statement来完成数据库相关操作，
+ * sql语句中不能存在占位符
  * @author Clinton Begin
  */
 public class SimpleStatementHandler extends BaseStatementHandler {
@@ -44,16 +46,21 @@ public class SimpleStatementHandler extends BaseStatementHandler {
   @Override
   public int update(Statement statement) throws SQLException {
     String sql = boundSql.getSql();
+    // 用户传入的实参
     Object parameterObject = boundSql.getParameterObject();
     KeyGenerator keyGenerator = mappedStatement.getKeyGenerator();
     int rows;
     if (keyGenerator instanceof Jdbc3KeyGenerator) {
+      // 执行sql语句
       statement.execute(sql, Statement.RETURN_GENERATED_KEYS);
+      // 获取受影响的行数
       rows = statement.getUpdateCount();
+      // 将数据库生成的主键添加到parameterObject中
       keyGenerator.processAfter(executor, mappedStatement, statement, parameterObject);
     } else if (keyGenerator instanceof SelectKeyGenerator) {
       statement.execute(sql);
       rows = statement.getUpdateCount();
+      // 执行selectKey节点中配置的sql语句获取数据库生成的主键，并添加到parameterObject中
       keyGenerator.processAfter(executor, mappedStatement, statement, parameterObject);
     } else {
       statement.execute(sql);
@@ -72,6 +79,7 @@ public class SimpleStatementHandler extends BaseStatementHandler {
   public <E> List<E> query(Statement statement, ResultHandler resultHandler) throws SQLException {
     String sql = boundSql.getSql();
     statement.execute(sql);
+    // 将结果集映射成结果对象
     return resultSetHandler.handleResultSets(statement);
   }
 
@@ -87,6 +95,7 @@ public class SimpleStatementHandler extends BaseStatementHandler {
     if (mappedStatement.getResultSetType() == ResultSetType.DEFAULT) {
       return connection.createStatement();
     } else {
+      // 设置结果集是否可以滚动及其游标是否可以上下移动，设置结果集是否可更新
       return connection.createStatement(mappedStatement.getResultSetType().getValue(), ResultSet.CONCUR_READ_ONLY);
     }
   }

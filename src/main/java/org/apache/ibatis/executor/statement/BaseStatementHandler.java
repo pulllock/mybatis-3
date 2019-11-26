@@ -42,10 +42,19 @@ public abstract class BaseStatementHandler implements StatementHandler {
   protected final ObjectFactory objectFactory;
   protected final TypeHandlerRegistry typeHandlerRegistry;
   protected final ResultSetHandler resultSetHandler;
+
+  /**
+   * ParameterHandler主要功能是为sql语句绑定实参，
+   * 使用传入的实参替换sql语句中的?占位符
+   */
   protected final ParameterHandler parameterHandler;
 
   protected final Executor executor;
   protected final MappedStatement mappedStatement;
+
+  /**
+   * 记录了用户设置的offset和limit，用于在结果集中定位映射的起始位置和结束位置
+   */
   protected final RowBounds rowBounds;
 
   protected BoundSql boundSql;
@@ -60,6 +69,7 @@ public abstract class BaseStatementHandler implements StatementHandler {
     this.objectFactory = configuration.getObjectFactory();
 
     if (boundSql == null) { // issue #435, get the key before calculating the statement
+      // 调用KeyGenerator.processBefore获取主键
       generateKeys(parameterObject);
       boundSql = mappedStatement.getBoundSql(parameterObject);
     }

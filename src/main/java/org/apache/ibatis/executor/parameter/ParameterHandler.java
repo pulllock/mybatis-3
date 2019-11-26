@@ -27,6 +27,11 @@ public interface ParameterHandler {
 
   Object getParameterObject();
 
+  /**
+   * 为sql语句绑定实参
+   * @param ps
+   * @throws SQLException
+   */
   void setParameters(PreparedStatement ps)
       throws SQLException;
 
