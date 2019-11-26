@@ -33,6 +33,7 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.transaction.Transaction;
 
 /**
+ * Executor接口的装饰器，增加了二级缓存相关功能
  * @author Clinton Begin
  * @author Eduardo Macarron
  */
@@ -92,20 +93,27 @@ public class CachingExecutor implements Executor {
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql)
       throws SQLException {
+    // 获取查询语句所在命名空间对应的二级缓存
     Cache cache = ms.getCache();
     if (cache != null) {
+      // 根据select节点配置，决定是否需要清空二级缓存
       flushCacheIfRequired(ms);
       if (ms.isUseCache() && resultHandler == null) {
+        // 二级缓存不能保存输出类型的参数
         ensureNoOutParams(ms, boundSql);
         @SuppressWarnings("unchecked")
+          // 查询二级缓存
         List<E> list = (List<E>) tcm.getObject(cache, key);
         if (list == null) {
+          // 二级缓存中不存在，调用Executor的query方法，会先查询一级缓存
           list = delegate.query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
+          // 保存
           tcm.putObject(cache, key, list); // issue #578 and #116
         }
         return list;
       }
     }
+    // 没有启用二级缓存，直接查询
     return delegate.query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
   }
 

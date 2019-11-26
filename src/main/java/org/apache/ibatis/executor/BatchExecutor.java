@@ -74,22 +74,29 @@ public class BatchExecutor extends BaseExecutor {
     final BoundSql boundSql = handler.getBoundSql();
     final String sql = boundSql.getSql();
     final Statement stmt;
+    // 当前执行的sql与上次执行的sql相同且对应的MappedStatement对象相同
     if (sql.equals(currentSql) && ms.equals(currentStatement)) {
+      // 获取集合中最后一个Statement对象
       int last = statementList.size() - 1;
       stmt = statementList.get(last);
       applyTransactionTimeout(stmt);
+      // 绑定实参，处理?占位符
       handler.parameterize(stmt);//fix Issues 322
+      // 查找对应的BatchResult对象，并记录用户传入的实参
       BatchResult batchResult = batchResultList.get(last);
       batchResult.addParameterObject(parameterObject);
     } else {
       Connection connection = getConnection(ms.getStatementLog());
+      // 创建新的Statement对象
       stmt = handler.prepare(connection, transaction.getTimeout());
+      // 绑定实参，处理?占位符
       handler.parameterize(stmt);    //fix Issues 322
       currentSql = sql;
       currentStatement = ms;
       statementList.add(stmt);
       batchResultList.add(new BatchResult(ms, sql, parameterObject));
     }
+    // 底层通过Statement.addBatch添加sql语句
     handler.batch(stmt);
     return BATCH_UPDATE_RETURN_VALUE;
   }
@@ -127,6 +134,7 @@ public class BatchExecutor extends BaseExecutor {
   @Override
   public List<BatchResult> doFlushStatements(boolean isRollback) throws SQLException {
     try {
+      // 用于记录批处理的结果
       List<BatchResult> results = new ArrayList<>();
       if (isRollback) {
         return Collections.emptyList();
@@ -136,6 +144,7 @@ public class BatchExecutor extends BaseExecutor {
         applyTransactionTimeout(stmt);
         BatchResult batchResult = batchResultList.get(i);
         try {
+          // executeBatch方法批量执行其中记录的sql，并返回int数组
           batchResult.setUpdateCounts(stmt.executeBatch());
           MappedStatement ms = batchResult.getMappedStatement();
           List<Object> parameterObjects = batchResult.getParameterObjects();
