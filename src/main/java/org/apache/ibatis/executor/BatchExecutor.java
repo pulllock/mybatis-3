@@ -36,15 +36,31 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.transaction.Transaction;
 
 /**
+ * 批处理多条sql语句功能
  * @author Jeff Butler
  */
 public class BatchExecutor extends BaseExecutor {
 
   public static final int BATCH_UPDATE_RETURN_VALUE = Integer.MIN_VALUE + 1002;
 
+  /**
+   * 缓存多个Statement对象，每个Statement对象中缓存了多条sql
+   */
   private final List<Statement> statementList = new ArrayList<>();
+
+  /**
+   * 记录批处理的结果
+   */
   private final List<BatchResult> batchResultList = new ArrayList<>();
+
+  /**
+   * 当前执行的sql
+   */
   private String currentSql;
+
+  /**
+   * 当前执行的MappedStatement
+   */
   private MappedStatement currentStatement;
 
   public BatchExecutor(Configuration configuration, Transaction transaction) {
