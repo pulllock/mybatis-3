@@ -45,6 +45,7 @@ import org.apache.ibatis.transaction.Transaction;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 主要提供了缓存管理和事务管理的基本功能
  * @author Clinton Begin
  */
 public abstract class BaseExecutor implements Executor {
@@ -52,7 +53,7 @@ public abstract class BaseExecutor implements Executor {
   private static final Log log = LogFactory.getLog(BaseExecutor.class);
 
   /**
-   * 事务
+   * 事务对象，实现事务提交、回滚和关闭
    */
   protected Transaction transaction;
 
@@ -175,6 +176,7 @@ public abstract class BaseExecutor implements Executor {
       throw new ExecutorException("Executor was closed.");
     }
     if (queryStack == 0 && ms.isFlushCacheRequired()) {
+      // 非嵌套查询，并且select节点配置的flushCache属性为true时，会清空
       clearLocalCache();
     }
     List<E> list;
@@ -192,6 +194,7 @@ public abstract class BaseExecutor implements Executor {
     } finally {
       queryStack--;
     }
+    // 最外层查询结束时，所有嵌套查询已经完成，缓存也已经完全加载，这里可以触发加载一级缓存中记录的嵌套查询的结果对象
     if (queryStack == 0) {
       // 延迟加载
       for (DeferredLoad deferredLoad : deferredLoads) {
@@ -232,6 +235,7 @@ public abstract class BaseExecutor implements Executor {
     if (closed) {
       throw new ExecutorException("Executor was closed.");
     }
+    // CacheKey对象由MappedStatement的id、offset、limit、sql语句包含?占位符、用户传递的实参以及Environment的id构成
     CacheKey cacheKey = new CacheKey();
     cacheKey.update(ms.getId());
     cacheKey.update(rowBounds.getOffset());
@@ -390,6 +394,9 @@ public abstract class BaseExecutor implements Executor {
     this.wrapper = wrapper;
   }
 
+  /**
+   * 负责从localCache缓存中延迟加载结果对象
+   */
   private static class DeferredLoad {
 
     private final MetaObject resultObject;
