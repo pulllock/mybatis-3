@@ -47,6 +47,9 @@ import org.apache.ibatis.session.RowBounds;
  */
 public class ResultLoaderMap {
 
+  /**
+   * 保存对象中延迟加载属性及其对应的ResultLoader对象的关系
+   */
   private final Map<String, LoadPair> loaderMap = new HashMap<>();
 
   public void addLoader(String property, MetaObject metaResultObject, ResultLoader resultLoader) {

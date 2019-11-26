@@ -388,8 +388,10 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
   private void storeObject(ResultHandler<?> resultHandler, DefaultResultContext<Object> resultContext, Object rowValue, ResultMapping parentMapping, ResultSet rs) throws SQLException {
     if (parentMapping != null) {
+      // 嵌套查询或者嵌套映射，将结果对象保存到父对象对应的属性中
       linkToParents(rs, parentMapping, rowValue);
     } else {
+      // 普通映射，将结果对象保存到ResultHandler中
       callResultHandler(resultHandler, resultContext, rowValue);
     }
   }
@@ -423,16 +425,23 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   //
 
   private Object getRowValue(ResultSetWrapper rsw, ResultMap resultMap, String columnPrefix) throws SQLException {
+    // 延迟加载相关
     final ResultLoaderMap lazyLoader = new ResultLoaderMap();
+    // 创建该行记录映射之后得到的结果对象，该结果对象的类型由resultMap节点的type属性指定
     Object rowValue = createResultObject(rsw, resultMap, lazyLoader, columnPrefix);
     if (rowValue != null && !hasTypeHandlerForResultObject(rsw, resultMap.getType())) {
+      // 创建结果对象相应的MetaObject对象
       final MetaObject metaObject = configuration.newMetaObject(rowValue);
       boolean foundValues = this.useConstructorMappings;
+      // 是否需要进行自动映射
       if (shouldApplyAutomaticMappings(resultMap, false)) {
+        // 自动映射ResultMap中未明确指定的列
         foundValues = applyAutomaticMappings(rsw, resultMap, metaObject, columnPrefix) || foundValues;
       }
+      // 映射ResultMap中明确指定需要映射的列
       foundValues = applyPropertyMappings(rsw, resultMap, metaObject, lazyLoader, columnPrefix) || foundValues;
       foundValues = lazyLoader.size() > 0 || foundValues;
+      // 如果没有成功映射任何属性，则根据mybatis-config.xml中的returnInstanceForEmptyRow配置决定返回空结果对象还是null
       rowValue = foundValues || configuration.isReturnInstanceForEmptyRow() ? rowValue : null;
     }
     return rowValue;
@@ -544,16 +553,19 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   }
 
   private boolean applyAutomaticMappings(ResultSetWrapper rsw, ResultMap resultMap, MetaObject metaObject, String columnPrefix) throws SQLException {
+    // 获取ResultMap中存在，但ResultMap中没有明确映射的列所对应的集合，如果resulType是HashMap的话，所有列会在这里获取到
     List<UnMappedColumnAutoMapping> autoMapping = createAutomaticMappings(rsw, resultMap, metaObject, columnPrefix);
     boolean foundValues = false;
     if (!autoMapping.isEmpty()) {
       for (UnMappedColumnAutoMapping mapping : autoMapping) {
+        // 获取自动映射的列值
         final Object value = mapping.typeHandler.getResult(rsw.getResultSet(), mapping.column);
         if (value != null) {
           foundValues = true;
         }
         if (value != null || (configuration.isCallSettersOnNulls() && !mapping.primitive)) {
           // gcode issue #377, call setter on nulls (value is not 'found')
+          // 自动映射的属性值设置到结果对象中
           metaObject.setValue(mapping.property, value);
         }
       }
@@ -615,10 +627,14 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   //
 
   private Object createResultObject(ResultSetWrapper rsw, ResultMap resultMap, ResultLoaderMap lazyLoader, String columnPrefix) throws SQLException {
+    // 标识是否使用构造方法创建该结果对象
     this.useConstructorMappings = false; // reset previous mapping result
     final List<Class<?>> constructorArgTypes = new ArrayList<>();
+    // 记录构造方法参数类型
     final List<Object> constructorArgs = new ArrayList<>();
+    // 创建该行记录对应的结果对象
     Object resultObject = createResultObject(rsw, resultMap, constructorArgTypes, constructorArgs, columnPrefix);
+    // 如果包含嵌套查询，并且配置了延迟加载，则创建代理对象
     if (resultObject != null && !hasTypeHandlerForResultObject(rsw, resultMap.getType())) {
       final List<ResultMapping> propertyMappings = resultMap.getPropertyResultMappings();
       for (ResultMapping propertyMapping : propertyMappings) {
@@ -629,22 +645,31 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         }
       }
     }
+    // 记录是否使用构造方法创建对象
     this.useConstructorMappings = resultObject != null && !constructorArgTypes.isEmpty(); // set current mapping result
     return resultObject;
   }
 
   private Object createResultObject(ResultSetWrapper rsw, ResultMap resultMap, List<Class<?>> constructorArgTypes, List<Object> constructorArgs, String columnPrefix)
       throws SQLException {
+    // 获取ResultMap中记录的type属性，是该行记录最终映射成的结果对象类型
     final Class<?> resultType = resultMap.getType();
+    // 创建该类型对象的MetaClass
     final MetaClass metaType = MetaClass.forClass(resultType, reflectorFactory);
+    // 获取constructor节点信息，可通过该集合确定相应的构造方法
     final List<ResultMapping> constructorMappings = resultMap.getConstructorResultMappings();
+    // 结果集中只有一列，且存在TypeHandler对象可以将该列转换成resultType类型的值
     if (hasTypeHandlerForResultObject(rsw, resultType)) {
+      // 先查找相应的TypeHandler对象，再使用TypeHandler对象将记录转换成Java类型的值
       return createPrimitiveResultObject(rsw, resultMap, columnPrefix);
     } else if (!constructorMappings.isEmpty()) {
+      // 通过反射调用构造方法，创建结果对象
       return createParameterizedResultObject(rsw, resultType, constructorMappings, constructorArgTypes, constructorArgs, columnPrefix);
     } else if (resultType.isInterface() || metaType.hasDefaultConstructor()) {
+      // 使用默认无参构造方法
       return objectFactory.create(resultType);
     } else if (shouldApplyAutomaticMappings(resultMap, false)) {
+      // 自动映射的方式
       return createByConstructorSignature(rsw, resultType, constructorArgTypes, constructorArgs);
     }
     throw new ExecutorException("Do not know how to create an instance of " + resultType);
@@ -674,6 +699,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
       constructorArgs.add(value);
       foundValues = value != null || foundValues;
     }
+    // 创建结果对象
     return foundValues ? objectFactory.create(resultType, constructorArgTypes, constructorArgs) : null;
   }
 
