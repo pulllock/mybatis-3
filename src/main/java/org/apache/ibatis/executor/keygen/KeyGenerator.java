@@ -25,8 +25,22 @@ import org.apache.ibatis.mapping.MappedStatement;
  */
 public interface KeyGenerator {
 
+  /**
+   * 在执行insert之前执行，order="BEFORE"
+   * @param executor
+   * @param ms
+   * @param stmt
+   * @param parameter
+   */
   void processBefore(Executor executor, MappedStatement ms, Statement stmt, Object parameter);
 
+  /**
+   * 在执行insert之后执行，order="AFTER"
+   * @param executor
+   * @param ms
+   * @param stmt
+   * @param parameter
+   */
   void processAfter(Executor executor, MappedStatement ms, Statement stmt, Object parameter);
 
 }

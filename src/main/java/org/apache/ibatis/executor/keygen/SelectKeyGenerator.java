@@ -27,13 +27,22 @@ import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.RowBounds;
 
 /**
+ * 对于不支持自动生成自增主键的数据库，可以使用此类来生成主键
  * @author Clinton Begin
  * @author Jeff Butler
  */
 public class SelectKeyGenerator implements KeyGenerator {
 
   public static final String SELECT_KEY_SUFFIX = "!selectKey";
+
+  /**
+   * 标识selectKey节点中定义的sql语句是在insert语句之前执行还是之后执行
+   */
   private final boolean executeBefore;
+
+  /**
+   * selectKey节点中定义的sql语句所对应的MappedStatement对象
+   */
   private final MappedStatement keyStatement;
 
   public SelectKeyGenerator(MappedStatement keyStatement, boolean executeBefore) {
@@ -60,9 +69,11 @@ public class SelectKeyGenerator implements KeyGenerator {
       if (parameter != null && keyStatement != null && keyStatement.getKeyProperties() != null) {
         String[] keyProperties = keyStatement.getKeyProperties();
         final Configuration configuration = ms.getConfiguration();
+        // 用户传入的实参
         final MetaObject metaParam = configuration.newMetaObject(parameter);
         // Do not close keyExecutor.
         // The transaction will be closed by parent executor.
+        // 创建Executor对象，并执行keyStatement字段中记录的sql语句，并得到主键对象
         Executor keyExecutor = configuration.newExecutor(executor.getTransaction(), ExecutorType.SIMPLE);
         List<Object> values = keyExecutor.query(keyStatement, parameter, RowBounds.DEFAULT, Executor.NO_RESULT_HANDLER);
         if (values.size() == 0) {
@@ -80,6 +91,7 @@ public class SelectKeyGenerator implements KeyGenerator {
               setValue(metaParam, keyProperties[0], values.get(0));
             }
           } else {
+            // 主键有多列的情况
             handleMultipleProperties(keyProperties, metaParam, metaResult);
           }
         }
