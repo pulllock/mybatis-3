@@ -110,7 +110,7 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   /**
-   * 解析xml为Configuration对象
+   * 解析mybatis-config.xml文件为Configuration对象
    * @return
    */
   public Configuration parse() {
@@ -127,7 +127,19 @@ public class XMLConfigBuilder extends BaseBuilder {
   private void parseConfiguration(XNode root) {
     try {
       //issue #117 read properties first
-      // 解析properties标签
+      /**
+       * 解析properties标签
+       * <properties resource="org/mybatis/example/config.properties">
+       *   <property name="username" value="dev_user"/>
+       *   <property name="password" value="F2Fa3!33TYyg"/>
+       * </properties>
+       * 属性来源：
+       * 1. <property/>标签中指定的属性
+       * 2. properties文件中指定的属性
+       * 3. 在构建XMLConfigBuilder对象的时候传入进来的属性
+       *
+       * 属性读取完成后，会设置到Configuration对象中
+       */
       propertiesElement(root.evalNode("properties"));
       // 解析settings标签
       Properties settings = settingsAsProperties(root.evalNode("settings"));
@@ -269,18 +281,28 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 解析properties元素
+   * <properties resource="org/mybatis/example/config.properties">
+   *   <property name="username" value="dev_user"/>
+   *   <property name="password" value="F2Fa3!33TYyg"/>
+   * </properties>
+   * @param context
+   * @throws Exception
+   */
   private void propertiesElement(XNode context) throws Exception {
     if (context != null) {
-      // 读取子标签，为properties对象
+      // 读取<property/>子标签，构造Properties对象
       Properties defaults = context.getChildrenAsProperties();
-      // 获取resource属性
+      // 获取resource属性，resource属性指定类properties配置文件
       String resource = context.getStringAttribute("resource");
-      // 获取url属性
+      // 获取url属性，url属性可以指定属性文件位置
       String url = context.getStringAttribute("url");
-      // 不能同时存在
+      // resource属性和url属性不能同时存在
       if (resource != null && url != null) {
         throw new BuilderException("The properties element cannot specify both a URL and a resource based property file reference.  Please specify one or the other.");
       }
+      // 下面从properties文件中读取的属性会覆盖上面<property/>元素中读取的数据
       if (resource != null) {
         // 读取本地properties配置文件到defaults中
         defaults.putAll(Resources.getResourceAsProperties(resource));
@@ -288,14 +310,21 @@ public class XMLConfigBuilder extends BaseBuilder {
         // 读取远程properties配置文件到defaults中
         defaults.putAll(Resources.getUrlAsProperties(url));
       }
-      // 从Configuration中读取属性
+      /**
+       * 从Configuration中读取属性
+       * 在创建XMLConfigBuilder实例对象的时候，可能会有properties属性传入
+       * 在创建XMLConfigBuilder实例对象的时候，会同时创建Configuration对象，也会把properties属性设置到
+       * Configuration对象中，这里获取的属性就是设置到Configuration的那些属性
+       * 这里的属性会覆盖<property/>元素和properties文件中的属性
+       */
       Properties vars = configuration.getVariables();
       // 覆盖defaults中存在的属性
       if (vars != null) {
         defaults.putAll(vars);
       }
-      //  将解析到的属性设置到parser和configuration中
+      //  将解析到的属性设置到parser中
       parser.setVariables(defaults);
+      // 将属性设置到Configuration对象中去
       configuration.setVariables(defaults);
     }
   }

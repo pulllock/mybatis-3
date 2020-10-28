@@ -29,6 +29,8 @@ import org.apache.ibatis.session.defaults.DefaultSqlSessionFactory;
  * Builds {@link SqlSession} instances.
  *
  * @author Clinton Begin
+ * 用来创建SqlSession工厂实例
+ * 一般使用此类从xml配置文件来构建一个SqlSession工厂
  */
 public class SqlSessionFactoryBuilder {
 
@@ -45,7 +47,7 @@ public class SqlSessionFactoryBuilder {
   }
 
   /**
-   * 构建SQLSessionFactory对象
+   * 构建SqlSessionFactory实例
    * @param reader
    * @param environment
    * @param properties
@@ -81,9 +83,29 @@ public class SqlSessionFactoryBuilder {
     return build(inputStream, null, properties);
   }
 
+  /**
+   * 构建SqlSessionFactory实例
+   * 步骤：
+   *  1. 使用mybatis-config.xml来创建一个XMLConfigBuilder
+   *  2. XMLConfigBuilder来解析配置文件成为Configuration对象
+   *  3. SqlSessionFactoryBuilder根据Configuration来构建一个DefaultSqlSessionFactory实例对象
+   * @param inputStream
+   * @param environment
+   * @param properties
+   * @return
+   */
   public SqlSessionFactory build(InputStream inputStream, String environment, Properties properties) {
     try {
+      /**
+       * XMLConfigBuilder，用来解析mybatis-config.xml
+       * XMLConfigBuilder在实例化的时候，会直接实例化一个Configuration对象
+       * properties这里也会将一些属性值设置到Configuration对象中
+       */
       XMLConfigBuilder parser = new XMLConfigBuilder(inputStream, environment, properties);
+      /**
+       * 先使用XMLConfigBuilder解析配置文件成为Configuration对象
+       * 在根据Configuration对象来构建一个DefaultSqlSessionFactory实例对象
+       */
       return build(parser.parse());
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error building SqlSession.", e);
