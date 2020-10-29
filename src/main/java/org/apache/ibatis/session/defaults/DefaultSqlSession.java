@@ -44,6 +44,7 @@ import org.apache.ibatis.session.SqlSession;
  * Note that this class is not Thread-Safe.
  *
  * @author Clinton Begin
+ * 默认的SqlSession
  */
 public class DefaultSqlSession implements SqlSession {
 
