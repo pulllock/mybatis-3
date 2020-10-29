@@ -64,8 +64,12 @@ public class ResultMapResolver {
     this.autoMapping = autoMapping;
   }
 
+  /**
+   * 使用MapperBuilderAssistant创建ResultMap对象，并添加到Configuration中去
+   * @return
+   */
   public ResultMap resolve() {
-    // 创建ResultMap对象
+    // 使用MapperBuilderAssistant创建ResultMap对象，并添加到Configuration中去
     return assistant.addResultMap(this.id, this.type, this.extend, this.discriminator, this.resultMappings, this.autoMapping);
   }
 

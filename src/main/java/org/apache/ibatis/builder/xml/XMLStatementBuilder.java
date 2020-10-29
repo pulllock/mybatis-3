@@ -54,8 +54,13 @@ public class XMLStatementBuilder extends BaseBuilder {
     this.requiredDatabaseId = databaseId;
   }
 
+  /**
+   * 解析 select、update、delete、insert等对应节点
+   */
   public void parseStatementNode() {
+    // id属性
     String id = context.getStringAttribute("id");
+    // databaseId属性
     String databaseId = context.getStringAttribute("databaseId");
 
     if (!databaseIdMatchesCurrent(id, databaseId, this.requiredDatabaseId)) {
@@ -66,18 +71,27 @@ public class XMLStatementBuilder extends BaseBuilder {
     String nodeName = context.getNode().getNodeName();
     // 获得对应的SqlCommandType
     SqlCommandType sqlCommandType = SqlCommandType.valueOf(nodeName.toUpperCase(Locale.ENGLISH));
+    // 是select语句
     boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
+    // flushCache属性，将其设置为 true 后，只要语句被调用，都会导致本地缓存和二级缓存被清空，
+    // 默认值：对于select为false，对insert、update 和 delete 语句true。
     boolean flushCache = context.getBooleanAttribute("flushCache", !isSelect);
+    // useCache属性，将其设置为 true 后，将会导致本条语句的结果被二级缓存缓存起来，默认值：对 select 元素为 true。
     boolean useCache = context.getBooleanAttribute("useCache", isSelect);
+    // 这个设置仅针对嵌套结果 select 语句：如果为 true，将会假设包含了嵌套结果集或是分组，
+    // 当返回一个主结果行时，就不会产生对前面结果集的引用。 这就使得在获取嵌套结果集的时候不至于内存不够用。默认值：false。
     boolean resultOrdered = context.getBooleanAttribute("resultOrdered", false);
 
     // Include Fragments before parsing
-    // 创建XMLIncludeTransformer对象，替换include标签的内容
+    // 创建XMLIncludeTransformer对象，用来替换include标签的内容
     XMLIncludeTransformer includeParser = new XMLIncludeTransformer(configuration, builderAssistant);
+    // 解析select下面的include元素
     includeParser.applyIncludes(context.getNode());
 
-    // parameterType的类型
+    // parameterType属性，将会传入这条语句的参数的类全限定名或别名。这个属性是可选的，
+    // 因为 MyBatis 可以通过类型处理器（TypeHandler）推断出具体传入语句的参数，默认值为未设置（unset）。
     String parameterType = context.getStringAttribute("parameterType");
+    // 获取parameterType对应的类
     Class<?> parameterTypeClass = resolveClass(parameterType);
 
     // lang对一个的LangDriver对象
@@ -93,11 +107,11 @@ public class XMLStatementBuilder extends BaseBuilder {
     KeyGenerator keyGenerator;
     String keyStatementId = id + SelectKeyGenerator.SELECT_KEY_SUFFIX;
     keyStatementId = builderAssistant.applyCurrentNamespace(keyStatementId, true);
-    // sql节点下存在selecyKey节点
+    // sql节点下存在selectKey节点，上面已经解析过selectKey属性了
     if (configuration.hasKeyGenerator(keyStatementId)) {
       keyGenerator = configuration.getKeyGenerator(keyStatementId);
     } else {
-      // 根据sql节点insert中的useGeneratedkeys属性值，mybatis-config.xml中全局的useGeneratedKeys配置
+      // 根据sql节点insert中的useGeneratedKeys属性值，mybatis-config.xml中全局的useGeneratedKeys配置
       keyGenerator = context.getBooleanAttribute("useGeneratedKeys",
           configuration.isUseGeneratedKeys() && SqlCommandType.INSERT.equals(sqlCommandType))
           ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
@@ -105,29 +119,60 @@ public class XMLStatementBuilder extends BaseBuilder {
 
     // 创建SqlSource
     SqlSource sqlSource = langDriver.createSqlSource(configuration, context, parameterTypeClass);
-    StatementType statementType = StatementType.valueOf(context.getStringAttribute("statementType", StatementType.PREPARED.toString()));
+    // 可选 STATEMENT，PREPARED 或 CALLABLE。这会让 MyBatis 分别使用 Statement，
+    // PreparedStatement 或 CallableStatement，默认值：PREPARED。
+    StatementType statementType = StatementType.valueOf(
+      context.getStringAttribute("statementType", StatementType.PREPARED.toString())
+    );
+    // 驱动程序每次批量返回的结果行数等于这个设置值。 默认值为未设置（unset）（依赖驱动）。
     Integer fetchSize = context.getIntAttribute("fetchSize");
+    // 这个设置是在抛出异常之前，驱动程序等待数据库返回请求结果的秒数。默认值为未设置（unset）（依赖数据库驱动）。
     Integer timeout = context.getIntAttribute("timeout");
+    // 将会传入这条语句的参数的类全限定名或别名。这个属性是可选的，
+    // 因为 MyBatis 可以通过类型处理器（TypeHandler）推断出具体传入语句的参数，默认值为未设置（unset）。
     String parameterMap = context.getStringAttribute("parameterMap");
+    // 期望从这条语句中返回结果的类全限定名或别名。 注意，如果返回的是集合，那应该设置为集合包含的类型，
+    // 而不是集合本身的类型。 resultType 和 resultMap 之间只能同时使用一个。
     String resultType = context.getStringAttribute("resultType");
     Class<?> resultTypeClass = resolveClass(resultType);
+    // 对外部 resultMap 的命名引用。结果映射是 MyBatis 最强大的特性，
+    // 如果你对其理解透彻，许多复杂的映射问题都能迎刃而解。 resultType 和 resultMap 之间只能同时使用一个。
     String resultMap = context.getStringAttribute("resultMap");
+    // FORWARD_ONLY，SCROLL_SENSITIVE, SCROLL_INSENSITIVE或DEFAULT（等价于 unset）中的一个，默认值为unset（依赖数据库驱动）。
     String resultSetType = context.getStringAttribute("resultSetType");
     ResultSetType resultSetTypeEnum = resolveResultSetType(resultSetType);
     if (resultSetTypeEnum == null) {
       resultSetTypeEnum = configuration.getDefaultResultSetType();
     }
+    // 仅适用于insert和update指定能够唯一识别对象的属性，MyBatis会使用getGeneratedKeys的返回值
+    // 或insert语句的selectKey子元素设置它的值，默认值：未设置（unset）。如果生成列不止一个，可以用逗号分隔多个属性名称。
     String keyProperty = context.getStringAttribute("keyProperty");
+    // 仅适用于 insert 和 update设置生成键值在表中的列名，在某些数据库（像 PostgreSQL）中，
+    // 当主键列不是表中的第一列的时候，是必须设置的。如果生成列不止一个，可以用逗号分隔多个属性名称。
     String keyColumn = context.getStringAttribute("keyColumn");
+    // 这个设置仅适用于多结果集的情况。它将列出语句执行后返回的结果集并赋予每个结果集一个名称，多个名称之间以逗号分隔。
     String resultSets = context.getStringAttribute("resultSets");
 
-    // 创建MappedStatement对象
+    // 创建MappedStatement对象，并添加到Configuration中去
     builderAssistant.addMappedStatement(id, sqlSource, statementType, sqlCommandType,
         fetchSize, timeout, parameterMap, parameterTypeClass, resultMap, resultTypeClass,
         resultSetTypeEnum, flushCache, useCache, resultOrdered,
         keyGenerator, keyProperty, keyColumn, databaseId, langDriver, resultSets);
   }
 
+  /**
+   * 解析selectKey元素
+   * <selectKey
+   *   keyProperty="id"
+   *   resultType="int"
+   *   order="BEFORE"
+   *   statementType="PREPARED">
+   *
+   * selectKey的原理是：先运行selectKey元素中的语句，然后设置要insert的对象的id，再执行insert语句
+   * @param id
+   * @param parameterTypeClass
+   * @param langDriver
+   */
   private void processSelectKeyNodes(String id, Class<?> parameterTypeClass, LanguageDriver langDriver) {
     // 获取全部的selectKey节点
     List<XNode> selectKeyNodes = context.evalNodes("selectKey");

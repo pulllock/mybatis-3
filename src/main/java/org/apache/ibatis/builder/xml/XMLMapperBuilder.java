@@ -139,7 +139,7 @@ public class XMLMapperBuilder extends BaseBuilder {
       parameterMapElement(context.evalNodes("/mapper/parameterMap"));
       // 解析resultMap结点，描述如何从数据库结果集中加载对象，是最复杂也是最强大的元素。
       resultMapElements(context.evalNodes("/mapper/resultMap"));
-      // 解析sql结点，可被其它语句引用的可重用语句块
+      // 解析sql结点，用来定义可重用的SQL代码片段，以便在其它语句中使用，主要是将sql片段添加到sqlFragments中去
       sqlElement(context.evalNodes("/mapper/sql"));
       // 解析select insert update delete结点
       buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
@@ -158,12 +158,13 @@ public class XMLMapperBuilder extends BaseBuilder {
   private void buildStatementFromContext(List<XNode> list, String requiredDatabaseId) {
     // 遍历select insert update delete节点
     for (XNode context : list) {
-      // 创建对象进行解析
+      // 创建XMLStatementBuilder对象进行解析
       final XMLStatementBuilder statementParser = new XMLStatementBuilder(configuration, builderAssistant, context, requiredDatabaseId);
       try {
+        // 将各个节点解析成MappedStatement对象
         statementParser.parseStatementNode();
       } catch (IncompleteElementException e) {
-        // 解析失败
+        // 解析失败，先放到Configuration中，后面继续解析
         configuration.addIncompleteStatement(statementParser);
       }
     }
@@ -315,32 +316,49 @@ public class XMLMapperBuilder extends BaseBuilder {
       // 处理constructor节点，用于在实例化类时，注入结果到构造方法中
       if ("constructor".equals(resultChild.getName())) {
         processConstructorElement(resultChild, typeClass, resultMappings);
-      } else if ("discriminator".equals(resultChild.getName())) {
-        // 处理discriminator节点
+      }
+      /**
+       * 处理discriminator节点
+       * 有时候，一个数据库查询可能会返回多个不同的结果集（但总体上还是有一定的联系的）。
+       * 鉴别器（discriminator）元素就是被设计来应对这种情况的，另外也能处理其它情况，例如类的继承层次结构。
+       * 鉴别器的概念很好理解——它很像 Java 语言中的 switch 语句。
+       *
+       * 一个鉴别器的定义需要指定 column 和 javaType 属性。column 指定了 MyBatis 查询被比较值的地方。
+       * 而 javaType 用来确保使用正确的相等测试（虽然很多情况下字符串的相等测试都可以工作）
+       */
+      else if ("discriminator".equals(resultChild.getName())) {
         discriminator = processDiscriminatorElement(resultChild, typeClass, resultMappings);
       } else {
         // 处理其他节点
         List<ResultFlag> flags = new ArrayList<>();
+        // <id/>元素
         if ("id".equals(resultChild.getName())) {
+          // 标记是ID元素
           flags.add(ResultFlag.ID);
         }
-        // 将当前子节点构建成ResultMapping对象，添加到resultMappings中
+        // 将id、result等子节点构建成ResultMapping对象，添加到resultMappings中
         resultMappings.add(buildResultMappingFromContext(resultChild, typeClass, flags));
       }
     }
-    // 获得id属性
+    // <resultMap/>元素的id属性
     String id = resultMapNode.getStringAttribute("id",
             resultMapNode.getValueBasedIdentifier());
-    // extends属性
+    // <resultMap/>元素的extends属性
     String extend = resultMapNode.getStringAttribute("extends");
-    // autoMapping属性
+    // <resultMap/>元素的autoMapping属性，如果设置这个属性，MyBatis 将会为本结果映射开启或者关闭自动映射。
+    // 这个属性会覆盖全局的属性 autoMappingBehavior。默认值：未设置（unset）。
     Boolean autoMapping = resultMapNode.getBooleanAttribute("autoMapping");
-    // 创建ResultMapResolver对象进行解析
-    ResultMapResolver resultMapResolver = new ResultMapResolver(builderAssistant, id, typeClass, extend, discriminator, resultMappings, autoMapping);
+    // 创建ResultMapResolver对象，这里会解析成一个ResultMap对象
+    ResultMapResolver resultMapResolver = new ResultMapResolver(
+      builderAssistant, id, typeClass,
+      extend, discriminator, resultMappings,
+      autoMapping
+    );
     try {
+      // 使用MapperBuilderAssistant创建ResultMap对象，并添加到Configuration中去
       return resultMapResolver.resolve();
     } catch (IncompleteElementException  e) {
-      // 解析失败，添加到configuration
+      // 如果解析失败，添加到configuration中，后面继续解析
       configuration.addIncompleteResultMap(resultMapResolver);
       throw e;
     }
@@ -360,7 +378,7 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   /**
-   * 处理constructor元素
+   * 处理constructor元素，并将constructor下面的子元素解析成ResultMapping对象放到resultMappings中
    * <constructor>
    *    <idArg column="id" javaType="int" name="id" />
    *    <arg column="age" javaType="_int" name="age" />
@@ -388,17 +406,47 @@ public class XMLMapperBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 处理discriminator元素
+   * 有时候，一个数据库查询可能会返回多个不同的结果集（但总体上还是有一定的联系的）。
+   * 鉴别器（discriminator）元素就是被设计来应对这种情况的，另外也能处理其它情况，例如类的继承层次结构。
+   * 鉴别器的概念很好理解——它很像 Java 语言中的 switch 语句。
+   *
+   * 一个鉴别器的定义需要指定 column 和 javaType 属性。column 指定了 MyBatis 查询被比较值的地方。
+   * 而 javaType 用来确保使用正确的相等测试（虽然很多情况下字符串的相等测试都可以工作）
+   * <resultMap id="vehicleResult" type="Vehicle">
+   *   <id property="id" column="id" />
+   *   <result property="vin" column="vin"/>
+   *   <result property="year" column="year"/>
+   *   <result property="make" column="make"/>
+   *   <result property="model" column="model"/>
+   *   <result property="color" column="color"/>
+   *   <discriminator javaType="int" column="vehicle_type">
+   *     <case value="1" resultMap="carResult"/>
+   *     <case value="2" resultMap="truckResult"/>
+   *     <case value="3" resultMap="vanResult"/>
+   *     <case value="4" resultMap="suvResult"/>
+   *   </discriminator>
+   * </resultMap>
+   * @param context
+   * @param resultType
+   * @param resultMappings
+   * @return
+   * @throws Exception
+   */
   private Discriminator processDiscriminatorElement(XNode context, Class<?> resultType, List<ResultMapping> resultMappings) throws Exception {
     // 获得节点的属性
     String column = context.getStringAttribute("column");
     String javaType = context.getStringAttribute("javaType");
     String jdbcType = context.getStringAttribute("jdbcType");
     String typeHandler = context.getStringAttribute("typeHandler");
-    // 解析属性对应的类
+    // 解析column属性对应的类，先从TypeAliasRegistry中获取，没有的话使用反射获取
     Class<?> javaTypeClass = resolveClass(javaType);
+    // 解析对应的TypeHandler的类
     Class<? extends TypeHandler<?>> typeHandlerClass = resolveClass(typeHandler);
+    // 解析jdbcType类型
     JdbcType jdbcTypeEnum = resolveJdbcType(jdbcType);
-    // 解析子节点，添加到discriminatorMap中
+    // 解析子节点case，添加到discriminatorMap中
     Map<String, String> discriminatorMap = new HashMap<>();
     for (XNode caseChild : context.getChildren()) {
       String value = caseChild.getStringAttribute("value");
@@ -410,6 +458,11 @@ public class XMLMapperBuilder extends BaseBuilder {
     return builderAssistant.buildDiscriminator(resultType, column, javaTypeClass, jdbcTypeEnum, typeHandlerClass, discriminatorMap);
   }
 
+  /**
+   * 解析<sql/>元素
+   * sql元素用来定义可重用的SQL代码片段，以便在其它语句中使用
+   * @param list
+   */
   private void sqlElement(List<XNode> list) {
     if (configuration.getDatabaseId() != null) {
       sqlElement(list, configuration.getDatabaseId());
@@ -422,11 +475,12 @@ public class XMLMapperBuilder extends BaseBuilder {
     for (XNode context : list) {
       // databaseId属性
       String databaseId = context.getStringAttribute("databaseId");
-      // id属性
+      // <sql/>的id属性
       String id = context.getStringAttribute("id");
       // 完整的id属性，格式为'${namespace}.${id}'
       id = builderAssistant.applyCurrentNamespace(id, false);
       if (databaseIdMatchesCurrent(id, databaseId, requiredDatabaseId)) {
+        // 将sql片段添加到sqlFragments中去
         sqlFragments.put(id, context);
       }
     }

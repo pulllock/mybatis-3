@@ -207,11 +207,15 @@ public class MapperBuilderAssistant extends BaseBuilder {
     extend = applyCurrentNamespace(extend, true);
 
     if (extend != null) {
+      // 继承的ResultMap没找到，抛异常
       if (!configuration.hasResultMap(extend)) {
         throw new IncompleteElementException("Could not find a parent resultmap with id '" + extend + "'");
       }
+      // 获取继承的ResultMap
       ResultMap resultMap = configuration.getResultMap(extend);
+      // 继承的resultMappings
       List<ResultMapping> extendedResultMappings = new ArrayList<>(resultMap.getResultMappings());
+      // 从父ResultMap中移除掉所有当前ResultMap中有的ResultMapping
       extendedResultMappings.removeAll(resultMappings);
       // Remove parent constructor if this resultMap declares a constructor.
       boolean declaresConstructor = false;
@@ -221,15 +225,18 @@ public class MapperBuilderAssistant extends BaseBuilder {
           break;
         }
       }
+      // 如果当前ResultMap中有构造器，将父ResultMap中构造去除
       if (declaresConstructor) {
         extendedResultMappings.removeIf(resultMapping -> resultMapping.getFlags().contains(ResultFlag.CONSTRUCTOR));
       }
+      // 当前ResultMap和父ResultMap合并，也就是如果有重复的，子ResultMap覆盖父ResultMap的ResultMapping
       resultMappings.addAll(extendedResultMappings);
     }
     // 创建ResultMap对象
     ResultMap resultMap = new ResultMap.Builder(configuration, id, type, resultMappings, autoMapping)
         .discriminator(discriminator)
         .build();
+    // 添加到Configuration中
     configuration.addResultMap(resultMap);
     return resultMap;
   }
@@ -436,6 +443,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .columnPrefix(columnPrefix)
         .foreignColumn(foreignColumn)
         .lazy(lazy)
+      // 里面会进行TypeHandler的解析和resultMapping部分属性的校验
         .build();
   }
 
