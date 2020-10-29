@@ -141,43 +141,125 @@ public class XMLConfigBuilder extends BaseBuilder {
        * 属性读取完成后，会设置到Configuration对象中
        */
       propertiesElement(root.evalNode("properties"));
-      // 解析settings标签
+      /**
+       * 解析settings标签，仅仅把合法的<setting/>标签中的属性都解析出来
+       */
       Properties settings = settingsAsProperties(root.evalNode("settings"));
       // 加载自定义VFS实现类
       loadCustomVfs(settings);
-      // 加载自定义Log实现
+      // 加载自定义Log实现，logImpl指定MyBatis所用日志的具体实现，未指定的时候将自动查找
       loadCustomLogImpl(settings);
-      // 解析typeAliases标签
+      //
+      /**
+       * 解析typeAliases标签
+       * <typeAliases>
+       *   <typeAlias alias="Author" type="domain.blog.Author"/>
+       *   <typeAlias alias="Blog" type="domain.blog.Blog"/>
+       *   <typeAlias alias="Comment" type="domain.blog.Comment"/>
+       *   <typeAlias alias="Post" type="domain.blog.Post"/>
+       *   <typeAlias alias="Section" type="domain.blog.Section"/>
+       *   <typeAlias alias="Tag" type="domain.blog.Tag"/>
+       * </typeAliases>
+       * 或者
+       * <typeAliases>
+       *   <package name="domain.blog"/>
+       * </typeAliases>
+       */
       typeAliasesElement(root.evalNode("typeAliases"));
-      // 解析plugins标签
+      /**
+       * 解析plugins标签
+       * MyBatis允许在映射语句执行过程中的某一点进行拦截调用
+       *
+       * <plugins>
+       *   <plugin interceptor="org.mybatis.example.ExamplePlugin">
+       *     <property name="someProperty" value="100"/>
+       *   </plugin>
+       * </plugins>
+       */
       pluginElement(root.evalNode("plugins"));
-      // 解析objectFactory标签
+      /**
+       * 解析objectFactory标签
+       * 每次 MyBatis 创建结果对象的新实例时，它都会使用一个对象工厂（ObjectFactory）实例来完成实例化工作。
+       * 默认的对象工厂需要做的仅仅是实例化目标类，要么通过默认无参构造方法，要么通过存在的参数映射来调用带有参数的构造方法。
+       * 如果想覆盖对象工厂的默认行为，可以通过创建自己的对象工厂来实现。
+       * <objectFactory type="org.mybatis.example.ExampleObjectFactory">
+       *   <property name="someProperty" value="100"/>
+       * </objectFactory>
+       */
       objectFactoryElement(root.evalNode("objectFactory"));
       // 解析objectWrapperFactory标签
       objectWrapperFactoryElement(root.evalNode("objectWrapperFactory"));
       // 解析reflectorFactory标签
       reflectorFactoryElement(root.evalNode("reflectorFactory"));
-      // 设置settings到Configuration对象中
+      // 设置settings中的各个属性到Configuration对象中
       settingsElement(settings);
       // read it after objectFactory and objectWrapperFactory issue #631
       // 解析environment标签
       environmentsElement(root.evalNode("environments"));
-      // 解析databaseIdProvider标签
+      /**
+       * 解析databaseIdProvider标签，数据库厂商标识
+       * MyBatis 可以根据不同的数据库厂商执行不同的语句，这种多厂商的支持是基于映射语句中的 databaseId 属性。
+       *  MyBatis 会加载带有匹配当前数据库 databaseId 属性和所有不带 databaseId 属性的语句。
+       *  如果同时找到带有 databaseId 和不带 databaseId 的相同语句，则后者会被舍弃。
+       */
       databaseIdProviderElement(root.evalNode("databaseIdProvider"));
-      // 解析typeHandlers标签
+      /**
+       * 解析typeHandlers标签，类型处理器
+       * MyBatis 在设置预处理语句（PreparedStatement）中的参数或从结果集中取出一个值时，
+       * 都会用类型处理器将获取到的值以合适的方式转换成 Java 类型。
+       *
+       * 这里会把我们自定义的TypeHandler注册到TypeHandlerRegistry中，后面解析mapper文件会使用到
+       *
+       * <typeHandlers>
+       *   <typeHandler handler="org.mybatis.example.ExampleTypeHandler"/>
+       * </typeHandlers>
+       * 或者
+       * <typeHandlers>
+       *   <package name="org.mybatis.example"/>
+       * </typeHandlers>
+       */
       typeHandlerElement(root.evalNode("typeHandlers"));
-      // 解析mappers标签
+      /**
+       * 解析mappers标签
+       * <mappers>
+       *   <mapper resource="org/mybatis/builder/AuthorMapper.xml"/>
+       *   <mapper resource="org/mybatis/builder/BlogMapper.xml"/>
+       *   <mapper resource="org/mybatis/builder/PostMapper.xml"/>
+       * </mappers>
+       */
       mapperElement(root.evalNode("mappers"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing SQL Mapper Configuration. Cause: " + e, e);
     }
   }
 
+  /**
+   * 解析settings属性
+   * <settings>
+   *   <setting name="cacheEnabled" value="true"/>
+   *   <setting name="lazyLoadingEnabled" value="true"/>
+   *   <setting name="multipleResultSetsEnabled" value="true"/>
+   *   <setting name="useColumnLabel" value="true"/>
+   *   <setting name="useGeneratedKeys" value="false"/>
+   *   <setting name="autoMappingBehavior" value="PARTIAL"/>
+   *   <setting name="autoMappingUnknownColumnBehavior" value="WARNING"/>
+   *   <setting name="defaultExecutorType" value="SIMPLE"/>
+   *   <setting name="defaultStatementTimeout" value="25"/>
+   *   <setting name="defaultFetchSize" value="100"/>
+   *   <setting name="safeRowBoundsEnabled" value="false"/>
+   *   <setting name="mapUnderscoreToCamelCase" value="false"/>
+   *   <setting name="localCacheScope" value="SESSION"/>
+   *   <setting name="jdbcTypeForNull" value="OTHER"/>
+   *   <setting name="lazyLoadTriggerMethods" value="equals,clone,hashCode,toString"/>
+   * </settings>
+   * @param context
+   * @return
+   */
   private Properties settingsAsProperties(XNode context) {
     if (context == null) {
       return new Properties();
     }
-    // 解析子标签
+    // 解析子标签，获取所有的<setting/>元素
     Properties props = context.getChildrenAsProperties();
     // Check that all settings are known to the configuration class
     // 检查每个属性，保证是Configuration的set方法
@@ -211,6 +293,22 @@ public class XMLConfigBuilder extends BaseBuilder {
     configuration.setLogImpl(logImpl);
   }
 
+  /**
+   * 解析类型别名typeAliases元素
+   * <typeAliases>
+   *   <typeAlias alias="Author" type="domain.blog.Author"/>
+   *   <typeAlias alias="Blog" type="domain.blog.Blog"/>
+   *   <typeAlias alias="Comment" type="domain.blog.Comment"/>
+   *   <typeAlias alias="Post" type="domain.blog.Post"/>
+   *   <typeAlias alias="Section" type="domain.blog.Section"/>
+   *   <typeAlias alias="Tag" type="domain.blog.Tag"/>
+   * </typeAliases>
+   * 或者
+   * <typeAliases>
+   *   <package name="domain.blog"/>
+   * </typeAliases>
+   * @param parent
+   */
   private void typeAliasesElement(XNode parent) {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
@@ -458,6 +556,8 @@ public class XMLConfigBuilder extends BaseBuilder {
         // 如果指定了package，则扫描该包下面的mapper文件
         if ("package".equals(child.getName())) {
           String mapperPackage = child.getStringAttribute("name");
+          // MapperRegistry会进行Mapper和接口的映射关系解析，会为每一个接口对应一个代理MapperProxyFactory
+          // 同时也会解析mapper文件
           configuration.addMappers(mapperPackage);
         } else {
           String resource = child.getStringAttribute("resource");
@@ -467,7 +567,9 @@ public class XMLConfigBuilder extends BaseBuilder {
           if (resource != null && url == null && mapperClass == null) {
             ErrorContext.instance().resource(resource);
             InputStream inputStream = Resources.getResourceAsStream(resource);
+            // 创建一个XMLMapperBuilder对象，用来解析mapper文件
             XMLMapperBuilder mapperParser = new XMLMapperBuilder(inputStream, configuration, resource, configuration.getSqlFragments());
+            // 解析mapper文件
             mapperParser.parse();
           } else if (resource == null && url != null && mapperClass == null) {
             // 使用URL

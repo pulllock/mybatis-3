@@ -51,6 +51,10 @@ import org.apache.ibatis.session.Configuration;
 /**
  * @author Clinton Begin
  * @author Kazuki Shimizu
+ * TypeHandler的注册表
+ * TypeHandler映射关系来源：
+ * 1. 在解析mybatis-config.xml配置文件时，如果有指定<typeHandlers/>，就会将TypeHandler注册到注册表中
+ * 2. TypeHandlerRegistry在实例化的时候，会注册一些默认的TypeHandler到注册表中，是一些Java基本的数据类型等对应的TypeHandler
  */
 public final class TypeHandlerRegistry {
 
@@ -443,8 +447,16 @@ public final class TypeHandlerRegistry {
 
   // Construct a handler (used also from Builders)
 
+  /**
+   * 获取TypeHandler实例
+   * @param javaTypeClass
+   * @param typeHandlerClass
+   * @param <T>
+   * @return
+   */
   @SuppressWarnings("unchecked")
   public <T> TypeHandler<T> getInstance(Class<?> javaTypeClass, Class<?> typeHandlerClass) {
+    // 有指定java类型，利用反射，根据java类型获取一个TypeHandler实例
     if (javaTypeClass != null) {
       try {
         Constructor<?> c = typeHandlerClass.getConstructor(Class.class);
@@ -455,6 +467,7 @@ public final class TypeHandlerRegistry {
         throw new TypeException("Failed invoking constructor for handler " + typeHandlerClass, e);
       }
     }
+    // 没有指定java类型 ，直接根据TypeHandler类型来获取一个TypeHandler实例
     try {
       Constructor<?> c = typeHandlerClass.getConstructor();
       return (TypeHandler<T>) c.newInstance();

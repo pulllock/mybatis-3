@@ -377,6 +377,24 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return resultMaps;
   }
 
+  /**
+   * 构建结果映射对象
+   * @param resultType <resultMap/> 结果类型
+   * @param property 结果类型中的属性
+   * @param column 数据库对应的类
+   * @param javaType 属性的java类型
+   * @param jdbcType 数据库类型
+   * @param nestedSelect
+   * @param nestedResultMap
+   * @param notNullColumn
+   * @param columnPrefix
+   * @param typeHandler
+   * @param flags
+   * @param resultSet
+   * @param foreignColumn
+   * @param lazy
+   * @return
+   */
   public ResultMapping buildResultMapping(
       Class<?> resultType,
       String property,
@@ -392,7 +410,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
       String resultSet,
       String foreignColumn,
       boolean lazy) {
+    // 解析属性的java类型
     Class<?> javaTypeClass = resolveResultJavaType(resultType, property, javaType);
+    // 根据属性的java类型，以及制定的typeHandler，来获取对应的TypeHandler实例
     TypeHandler<?> typeHandlerInstance = resolveTypeHandler(javaTypeClass, typeHandler);
     // 解析组合字段名称成ResultMapping集合，涉及关联的嵌套查询
     List<ResultMapping> composites;
@@ -457,15 +477,28 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return composites;
   }
 
+  /**
+   * 解析结果属性的java类型，
+   * 如果指定了java类型，直接使用，没有指定的话根据属性从结果类中获取对应的setter方法的java类型
+   * 如果setter上的类型也获取不到，就默认使用Object类型
+   * @param resultType 结果类型
+   * @param property 属性
+   * @param javaType java类型
+   * @return
+   */
   private Class<?> resolveResultJavaType(Class<?> resultType, String property, Class<?> javaType) {
+    // 没有显式指定java类型，根据属性从结果类中获取对应的java类型
     if (javaType == null && property != null) {
       try {
+        // 获取结果类型对应的类的元数据
         MetaClass metaResultType = MetaClass.forClass(resultType, configuration.getReflectorFactory());
+        // 获取属性对应的setter属性的java类型
         javaType = metaResultType.getSetterType(property);
       } catch (Exception e) {
         //ignore, following null check statement will deal with the situation
       }
     }
+    // 没能从setter方法上获取到java类型，默认是Object类型
     if (javaType == null) {
       javaType = Object.class;
     }
