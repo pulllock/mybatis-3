@@ -602,20 +602,35 @@ public class Configuration {
     return newExecutor(transaction, defaultExecutorType);
   }
 
+  /**
+   * 创建sql执行器
+   * @param transaction
+   * @param executorType
+   * @return
+   */
   public Executor newExecutor(Transaction transaction, ExecutorType executorType) {
+    // 没有指定sql执行器，使用默认的
     executorType = executorType == null ? defaultExecutorType : executorType;
+    // 默认的也为空的话，使用ExecutorType.SIMPLE
     executorType = executorType == null ? ExecutorType.SIMPLE : executorType;
     Executor executor;
+    // 批处理多条sql语句的执行器
     if (ExecutorType.BATCH == executorType) {
       executor = new BatchExecutor(this, transaction);
-    } else if (ExecutorType.REUSE == executorType) {
+    }
+    // Statement重用功能的执行器
+    else if (ExecutorType.REUSE == executorType) {
       executor = new ReuseExecutor(this, transaction);
-    } else {
+    }
+    // 默认简单执行器
+    else {
       executor = new SimpleExecutor(this, transaction);
     }
+    // 如果启用了缓存，使用装饰器模式，提供二级缓存功能
     if (cacheEnabled) {
       executor = new CachingExecutor(executor);
     }
+    // 插件功能
     executor = (Executor) interceptorChain.pluginAll(executor);
     return executor;
   }
@@ -779,7 +794,15 @@ public class Configuration {
     mapperRegistry.addMapper(type);
   }
 
+  /**
+   * 从MapperRegistry中获取类型对应的Mapper接口
+   * @param type
+   * @param sqlSession
+   * @param <T>
+   * @return
+   */
   public <T> T getMapper(Class<T> type, SqlSession sqlSession) {
+    // 实际上获取到的结果是一个Mapper接口对应的代理：MapperProxy
     return mapperRegistry.getMapper(type, sqlSession);
   }
 

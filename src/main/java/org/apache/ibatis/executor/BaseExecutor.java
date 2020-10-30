@@ -160,7 +160,7 @@ public abstract class BaseExecutor implements Executor {
 
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler) throws SQLException {
-    // 获取BoundSql对象
+    // 获取BoundSql对象，从SqlSource中解析获取
     BoundSql boundSql = ms.getBoundSql(parameter);
     // 创建CacheKey
     CacheKey key = createCacheKey(ms, parameter, rowBounds, boundSql);
@@ -175,6 +175,7 @@ public abstract class BaseExecutor implements Executor {
     if (closed) {
       throw new ExecutorException("Executor was closed.");
     }
+    // flushCache 将其设置为 true 后，只要语句被调用，都会导致本地缓存和二级缓存被清空，默认值：false。
     if (queryStack == 0 && ms.isFlushCacheRequired()) {
       // 非嵌套查询，并且select节点配置的flushCache属性为true时，会清空
       clearLocalCache();
@@ -360,7 +361,8 @@ public abstract class BaseExecutor implements Executor {
     }
   }
 
-  private <E> List<E> queryFromDatabase(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql) throws SQLException {
+  private <E> List<E> queryFromDatabase(MappedStatement ms, Object parameter, RowBounds rowBounds,
+                                        ResultHandler resultHandler, CacheKey key, BoundSql boundSql) throws SQLException {
     List<E> list;
     // 添加占位符到缓存中，与延迟加载有关
     localCache.putObject(key, EXECUTION_PLACEHOLDER);

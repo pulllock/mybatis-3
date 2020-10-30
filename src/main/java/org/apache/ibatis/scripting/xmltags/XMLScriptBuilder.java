@@ -63,6 +63,10 @@ public class XMLScriptBuilder extends BaseBuilder {
     nodeHandlerMap.put("bind", new BindHandler());
   }
 
+  /**
+   * 解析sql节点
+   * @return
+   */
   public SqlSource parseScriptNode() {
     // 先判断当前结点是不是有动态SQL，动态SQL会包括占位符或是动态SQL的相关节点
     // 并将SqlNode包装成MixedSqlNode

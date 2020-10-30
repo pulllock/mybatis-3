@@ -305,7 +305,13 @@ public final class MappedStatement {
     return resultSets;
   }
 
+  /**
+   * 从SqlSource中获取BoundSql
+   * @param parameterObject
+   * @return
+   */
   public BoundSql getBoundSql(Object parameterObject) {
+    // 从SqlSource中解析，SqlSource有几种不同实现，根据我们使用，解析的时候会创建不同对象
     BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
     List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
     if (parameterMappings == null || parameterMappings.isEmpty()) {

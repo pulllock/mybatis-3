@@ -96,6 +96,7 @@ public class XMLStatementBuilder extends BaseBuilder {
 
     // lang对一个的LangDriver对象
     String lang = context.getStringAttribute("lang");
+    // Configuration实例化的时候，注册了默认的XMLLanguageDriver，同时也注册一个RawLanguageDriver
     LanguageDriver langDriver = getLanguageDriver(lang);
 
     // Parse selectKey after includes and remove them.
@@ -117,7 +118,7 @@ public class XMLStatementBuilder extends BaseBuilder {
           ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
     }
 
-    // 创建SqlSource
+    // 创建SqlSource，默认XMLLanguageDriver
     SqlSource sqlSource = langDriver.createSqlSource(configuration, context, parameterTypeClass);
     // 可选 STATEMENT，PREPARED 或 CALLABLE。这会让 MyBatis 分别使用 Statement，
     // PreparedStatement 或 CallableStatement，默认值：PREPARED。

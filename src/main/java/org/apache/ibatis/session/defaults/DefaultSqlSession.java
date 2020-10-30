@@ -85,15 +85,28 @@ public class DefaultSqlSession implements SqlSession {
     return this.selectOne(statement, null);
   }
 
+  /**
+   * select单个数据
+   * @param statement 是MappedStatement的id
+   * @param parameter 参数
+   * @param <T>
+   * @return
+   */
   @Override
   public <T> T selectOne(String statement, Object parameter) {
     // Popular vote was to return null on 0 results and throw exception on too many.
+    // 使用selectList来获取结果
     List<T> list = this.selectList(statement, parameter);
+    // 仅有一条结果的时候，返回
     if (list.size() == 1) {
       return list.get(0);
-    } else if (list.size() > 1) {
+    }
+    // 多于一条结果，抛异常
+    else if (list.size() > 1) {
       throw new TooManyResultsException("Expected one result (or null) to be returned by selectOne(), but found: " + list.size());
-    } else {
+    }
+    // 无结果，返回null
+    else {
       return null;
     }
   }
@@ -158,7 +171,10 @@ public class DefaultSqlSession implements SqlSession {
   @Override
   public <E> List<E> selectList(String statement, Object parameter, RowBounds rowBounds) {
     try {
+      // 根据MappedStatement的id从Configuration中获取对应的MappedStatement
       MappedStatement ms = configuration.getMappedStatement(statement);
+      // 使用具体的执行器来执行sql，执行器默认是simple，如果有缓存的的话是cache
+      // 如果是集合或数组，使用一个map包装一下
       return executor.query(ms, wrapCollection(parameter), rowBounds, Executor.NO_RESULT_HANDLER);
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error querying database.  Cause: " + e, e);
@@ -303,6 +319,7 @@ public class DefaultSqlSession implements SqlSession {
 
   @Override
   public <T> T getMapper(Class<T> type) {
+    // 根据类型，从Configuration获取对应Mapper接口，这是在解析配置文件的时候放进去的
     return configuration.getMapper(type, this);
   }
 

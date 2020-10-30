@@ -32,6 +32,7 @@ import org.apache.ibatis.session.Configuration;
  * Can also have additional parameters that are created by the dynamic language (for loops, bind...).
  *
  * @author Clinton Begin
+ * 从SqlSource解析得到的sql语句，可能会有?占位符
  */
 public class BoundSql {
 
