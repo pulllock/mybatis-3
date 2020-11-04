@@ -21,6 +21,7 @@ import org.apache.ibatis.reflection.Reflector;
 
 /**
  * @author Clinton Begin
+ * get属性的封装
  */
 public class GetFieldInvoker implements Invoker {
 

@@ -45,44 +45,47 @@ import org.apache.ibatis.reflection.property.PropertyNamer;
  * This class represents a cached set of class definition information that
  * allows for easy mapping between property names and getter/setter methods.
  *
- * 每个Reflector对应一个类，会缓存反射操作需要的类的信息等
+ * MyBatis进行参数处理、结果映射处理等都会使用Java的反射操作，
+ * 出于性能考虑和反射操作的复杂问题，Mybatis专门提供了反射模块，将Java反射进行封装，并进行缓存。
+ *
+ * 每个Reflector对应一个类，Reflector会缓存反射操作需要的类的信息等
  *
  * @author Clinton Begin
  */
 public class Reflector {
 
   /**
-   * 对应的类
+   * 对应的类的Class类型
    */
   private final Class<?> type;
 
   /**
-   * 可读属性数组
+   * 可读属性数组，getter方法
    */
   private final String[] readablePropertyNames;
 
   /**
-   * 可写属性数组
+   * 可写属性数组，setter方法
    */
   private final String[] writablePropertyNames;
 
   /**
-   * set方法映射
+   * set方法映射，记录属性对应的setter方法，key是属性名称，value是setter方法的封装Invoker对象：SetFieldInvoker
    */
   private final Map<String, Invoker> setMethods = new HashMap<>();
 
   /**
-   * get方法映射
+   * get方法映射，记录属性对应的getter方法，key是属性名称，value是getter方法的封装Invoker对象：GetFieldInvoker
    */
   private final Map<String, Invoker> getMethods = new HashMap<>();
 
   /**
-   * set方法的方法参数类型
+   * set方法的方法参数类型，key是属性名，value是setter方法的参数的类型
    */
   private final Map<String, Class<?>> setTypes = new HashMap<>();
 
   /**
-   * get方法的方法参数类型
+   * get方法的方法参数类型，key是属性名，value是getter方法的参数的类型
    */
   private final Map<String, Class<?>> getTypes = new HashMap<>();
 
@@ -92,18 +95,22 @@ public class Reflector {
   private Constructor<?> defaultConstructor;
 
   /**
-   * 不区分大小写的属性集合
+   * 不区分大小写的所有的属性名称的集合
    */
   private Map<String, String> caseInsensitivePropertyMap = new HashMap<>();
 
+  /**
+   * Reflector构造方法，实例化的时候，会解析指定的类
+   * @param clazz
+   */
   public Reflector(Class<?> clazz) {
-    // 设置对应类
+    // 设置对应类的Class类型
     type = clazz;
-    // 设置默认构造方法
+    // 设置默认构造方法，获取clazz所有的构造方法，找到无参构造
     addDefaultConstructor(clazz);
-    // 初始化get方法和参数类型映射，通过遍历get方法
+    // 初始化getter方法和参数类型映射，遍历所有getter方法，包括父类的
     addGetMethods(clazz);
-    // 初始化set方法和参数类型映射，通过遍历set方法
+    // 初始化setter方法和参数类型映射，遍历所有setter方法，包括父类的
     addSetMethods(clazz);
     // 初始化get和set方法以及类型映射，通过遍历fields属性
     addFields(clazz);
@@ -122,32 +129,47 @@ public class Reflector {
 
   /**
    * 添加默认构造方法
-   * 获得所有的构造方法，遍历，查找无参构造方法
+   * 获得clazz所有的构造方法，遍历，查找无参构造方法
    * @param clazz
    */
   private void addDefaultConstructor(Class<?> clazz) {
+    // 获取所有的构造方法
     Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+    // 遍历构造方法，找到参数长度为0的，就是无参构造
     Arrays.stream(constructors).filter(constructor -> constructor.getParameterTypes().length == 0)
       .findAny().ifPresent(constructor -> this.defaultConstructor = constructor);
   }
 
+  /**
+   * 添加getter方法
+   * @param clazz
+   */
   private void addGetMethods(Class<?> clazz) {
     // 属性和方法的映射，父类和子类都可能定义相同属性的getting方法，所以value是个List
     Map<String, List<Method>> conflictingGetters = new HashMap<>();
-    // 获得所有的方法
+    /**
+     * 获得所有的方法，包括父类中的方法，不包含Object类中的方法，这里面还可能有重复的方法：
+     * 子类重写了父类方法，会产生相同签名的方法
+     * 但是也可能出现两个签名不同的方法，比如子类重写了父类的方法，但是子类该方法的返回值和父类的不一致，
+     * 子类方法的返回值是父类方法的返回值的子类，这样会导致两个不同签名的方法
+     */
     Method[] methods = getClassMethods(clazz);
     Arrays
       .stream(methods)
-      // 参数为0，get或者is开头的方法
+      // 方法的参数长度为0，并且是以get或者is开头的方法，不是setter方法，需要过滤掉
       .filter(m -> m.getParameterTypes().length == 0 && PropertyNamer.isGetter(m.getName()))
-      // 添加到conflictingGetters映射中
+      /**
+       * 先从方法名转成属性名，再把属性名和对应的方法添加到conflictingGetters映射中
+       * 就是将属性名相同的方法添加到同一个List中去
+       */
       .forEach(m -> addMethodConflict(conflictingGetters, PropertyNamer.methodToProperty(m.getName()), m));
-    // 解决冲突的getting方法
+    // 解决冲突的getter方法
     resolveGetterConflicts(conflictingGetters);
   }
 
   /**
-   * 解决get方法冲突，子类父类中可能存在相同的方法。
+   * 解决getter方法冲突
+   * 子类重写父类方法，可能会产生两个签名相同的方法，方法唯一签名规则：返回值类型#方法名:参数1类型,参数2类型,...
    * 一个属性只保留一个对应的方法
    * @param conflictingGetters
    */
@@ -163,16 +185,30 @@ public class Reflector {
         }
         Class<?> winnerType = winner.getReturnType();
         Class<?> candidateType = candidate.getReturnType();
+        /**
+         * 属性名相同，返回类型也相同的情况
+         * 这种特殊的情况如下
+         * public boolean isDeleted(){return xxxx}
+         * public boolean getDeleted(){return xxxx}
+         * 这样两个方法的唯一签名不同，但是属性名都是deleted
+         */
         if (candidateType.equals(winnerType)) {
+          // 返回类型不是boolean的，冲突
           if (!boolean.class.equals(candidateType)) {
             isAmbiguous = true;
             break;
-          } else if (candidate.getName().startsWith("is")) {
+          }
+          // 保留is开头的getter方法，get开头的忽略掉
+          else if (candidate.getName().startsWith("is")) {
             winner = candidate;
           }
-        } else if (candidateType.isAssignableFrom(winnerType)) {
+        }
+        // winnerType是candidateType的子类或接口的子实现
+        else if (candidateType.isAssignableFrom(winnerType)) {
           // OK getter type is descendant
-        } else if (winnerType.isAssignableFrom(candidateType)) {
+        }
+        // candidateType是winnerType的子类或接口的子实现
+        else if (winnerType.isAssignableFrom(candidateType)) {
           winner = candidate;
         } else {
           isAmbiguous = true;
@@ -185,6 +221,12 @@ public class Reflector {
   }
 
   private void addGetMethod(String name, Method method, boolean isAmbiguous) {
+    /**
+     * 如果名字重复，意味着两个getter方法冲突，创建一个AmbiguousMethodInvoker对象，表示有歧义的方法调用封装
+     * 在调用这个方法的时候AmbiguousMethodInvoker的invoke方法会抛异常
+     *
+     * 其他正常的方法会封装成MethodInvoker
+     */
     MethodInvoker invoker = isAmbiguous
         ? new AmbiguousMethodInvoker(method, MessageFormat.format(
             "Illegal overloaded getter method with ambiguous type for property ''{0}'' in class ''{1}''. This breaks the JavaBeans specification and can cause unpredictable results.",
@@ -192,7 +234,7 @@ public class Reflector {
         : new MethodInvoker(method);
     // 添加到getMethods中
     getMethods.put(name, invoker);
-    // 获得返回类型
+    // 获得方法的返回类型
     Type returnType = TypeParameterResolver.resolveReturnType(method, type);
     // 返回类型转换成Class后添加到getTypes中
     getTypes.put(name, typeToClass(returnType));
@@ -205,6 +247,7 @@ public class Reflector {
       .forEach(m -> addMethodConflict(conflictingSetters, PropertyNamer.methodToProperty(m.getName()), m));
     resolveSetterConflicts(conflictingSetters);
   }
+
 
   private void addMethodConflict(Map<String, List<Method>> conflictingMethods, String name, Method method) {
     if (isValidPropertyName(name)) {
@@ -342,14 +385,15 @@ public class Reflector {
    *
    * @param clazz The class
    * @return An array containing all methods in this class
+   * 获取当前类以及父类中的所有方法，除了Object类
    */
   private Method[] getClassMethods(Class<?> clazz) {
-    // 每个方法签名和方法的映射
+    // 每个方法的唯一签名和方法的映射
     Map<String, Method> uniqueMethods = new HashMap<>();
     Class<?> currentClass = clazz;
     // 依次循环父类，除了Object类
     while (currentClass != null && currentClass != Object.class) {
-      // 记录当前类中定义的方法
+      // 记录当前类中定义的全部方法
       addUniqueMethods(uniqueMethods, currentClass.getDeclaredMethods());
 
       // we also need to look for interface methods -
@@ -370,15 +414,24 @@ public class Reflector {
     return methods.toArray(new Method[0]);
   }
 
+  /**
+   * 为每个方法生成一个唯一签名，并记录到uniqueMethods这个Map中国
+   * @param uniqueMethods
+   * @param methods
+   */
   private void addUniqueMethods(Map<String, Method> uniqueMethods, Method[] methods) {
     for (Method currentMethod : methods) {
       if (!currentMethod.isBridge()) {
-        // 获得方法签名
+        // 获得方法签名，规则：返回值类型#方法名:参数1类型,参数2类型,...
         String signature = getSignature(currentMethod);
         // check to see if the method is already known
         // if it is known, then an extended class must have
         // overridden a method
-        // 不存在就添加
+        /**
+         * 不存在就添加，这里判断主要是因为子类重写了父类方法，会产生相同签名的方法
+         * 但是也可能出现两个签名不同的方法，比如子类重写了父类的方法，但是子类该方法的返回值和父类的不一致，
+         * 子类方法的返回值是父类方法的返回值的子类，这样会导致两个不同签名的方法
+         */
         if (!uniqueMethods.containsKey(signature)) {
           uniqueMethods.put(signature, currentMethod);
         }
@@ -387,8 +440,8 @@ public class Reflector {
   }
 
   /**
-   * 获得方法签名
-   * 格式：returnType#方法名:参数名1,参数名2,参数名3
+   * 获得方法唯一签名
+   * 格式：returnType#方法名:参数1类型,参数2类型,参数3类型,...
    * @param method
    * @return
    */
@@ -401,7 +454,7 @@ public class Reflector {
     }
     // 方法名
     sb.append(method.getName());
-    // 方法参数
+    // 方法参数类型
     Class<?>[] parameters = method.getParameterTypes();
     for (int i = 0; i < parameters.length; i++) {
       sb.append(i == 0 ? ':' : ',').append(parameters[i].getName());

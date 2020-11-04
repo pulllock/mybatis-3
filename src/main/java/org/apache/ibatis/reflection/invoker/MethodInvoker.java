@@ -22,6 +22,7 @@ import org.apache.ibatis.reflection.Reflector;
 
 /**
  * @author Clinton Begin
+ * 方法调用的封装
  */
 public class MethodInvoker implements Invoker {
 

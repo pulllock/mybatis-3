@@ -27,6 +27,12 @@ import java.util.Arrays;
 
 /**
  * @author Iwao AVE!
+ * 用来解析方法的参数、方法的返回类型、类中定义的字段类型
+ *
+ * Type是java中所有类型的父接口
+ * Class表示JVM中的一个类或接口，可通过xxx.class、getClass()、Class.forName()、ClassLoader等方式获取一个类或者接口的Class
+ * ParameterizedType表示参数化类型，有参数的类型，比如Collection<T>、Map<K,V>
+ * TypeVariable类型变量，是JVM在编译泛型前的信息
  */
 public class TypeParameterResolver {
 
@@ -41,12 +47,22 @@ public class TypeParameterResolver {
   }
 
   /**
+   * 解析方法的返回类型
+   * @param method 方法
+   * @param srcType 方法所属的类的类型
    * @return The return type of the method as {@link Type}. If it has type parameters in the declaration,<br>
    *         they will be resolved to the actual runtime {@link Type}s.
    */
   public static Type resolveReturnType(Method method, Type srcType) {
+    /**
+     * 获取方法的返回类型对应的Type对象
+     * 如果方法的返回值是普通简单类型，如Object、int、String等，返回的就是这些类型
+     * 如果方法的返回值是泛型，返回的就是参数化类型
+     */
     Type returnType = method.getGenericReturnType();
+    // 返回方法所在的类的Class对象
     Class<?> declaringClass = method.getDeclaringClass();
+    // 解析类型
     return resolveType(returnType, srcType, declaringClass);
   }
 
@@ -64,14 +80,28 @@ public class TypeParameterResolver {
     return result;
   }
 
+  /**
+   * 解析类型
+   * @param type 要解析的类型
+   * @param srcType 要解析的类型所在的类的类型
+   * @param declaringClass 要解析的类型所在的类的Class对象
+   * @return
+   */
   private static Type resolveType(Type type, Type srcType, Class<?> declaringClass) {
+    // 类型变量，JVM编译泛型前的信息，比如List<T>中的T
     if (type instanceof TypeVariable) {
+      // 解析类型变量
       return resolveTypeVar((TypeVariable<?>) type, srcType, declaringClass);
-    } else if (type instanceof ParameterizedType) {
+    }
+    // 参数化类型，带<>的类型，比如List<String>
+    else if (type instanceof ParameterizedType) {
       return resolveParameterizedType((ParameterizedType) type, srcType, declaringClass);
-    } else if (type instanceof GenericArrayType) {
+    }
+    // 泛型数组类型，比如List<T>[] myArray，类型就是List<T>[]
+    else if (type instanceof GenericArrayType) {
       return resolveGenericArrayType((GenericArrayType) type, srcType, declaringClass);
     } else {
+      // Class类型，不需要解析，返回即可
       return type;
     }
   }
@@ -133,32 +163,50 @@ public class TypeParameterResolver {
     return result;
   }
 
+  /**
+   * 解析类型变量的实际类型，比如List<T>中的T
+   * @param typeVar 要解析的类型变量
+   * @param srcType 要解析的类型变量所在的类的类型
+   * @param declaringClass 要解析的类型变量所在的类的Class对象
+   * @return
+   */
   private static Type resolveTypeVar(TypeVariable<?> typeVar, Type srcType, Class<?> declaringClass) {
     Type result;
+
+    // 表示所在类的Class对象
     Class<?> clazz;
+    // 所在类是一个Class类型的
     if (srcType instanceof Class) {
       clazz = (Class<?>) srcType;
-    } else if (srcType instanceof ParameterizedType) {
+    }
+    // 所在类是一个参数化类型的，也就是一个带<>的类
+    else if (srcType instanceof ParameterizedType) {
       ParameterizedType parameterizedType = (ParameterizedType) srcType;
+      // 需要获取参数类型的原始类型，比如Map<K,V> 获取到的就是Map
       clazz = (Class<?>) parameterizedType.getRawType();
     } else {
       throw new IllegalArgumentException("The 2nd arg must be Class or ParameterizedType, but was: " + srcType.getClass());
     }
 
+    // 如果当前类就是声明了类型变量的类，可以直接获取typeVar的类型
     if (clazz == declaringClass) {
+      // typeVar声明了上界，就获取上界的第一个
       Type[] bounds = typeVar.getBounds();
       if (bounds.length > 0) {
         return bounds[0];
       }
+      // 如果没有声明上界，就返回Object
       return Object.class;
     }
 
+    // 扫描父类，确定类型
     Type superclass = clazz.getGenericSuperclass();
     result = scanSuperTypes(typeVar, srcType, declaringClass, clazz, superclass);
     if (result != null) {
       return result;
     }
 
+    // 通过父类无法确定类型，扫描实现的接口确定类型
     Type[] superInterfaces = clazz.getGenericInterfaces();
     for (Type superInterface : superInterfaces) {
       result = scanSuperTypes(typeVar, srcType, declaringClass, clazz, superInterface);
