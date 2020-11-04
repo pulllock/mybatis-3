@@ -234,7 +234,7 @@ public class Reflector {
         : new MethodInvoker(method);
     // 添加到getMethods中
     getMethods.put(name, invoker);
-    // 获得方法的返回类型
+    // 获得方法的返回类型，这里面解析有点复杂
     Type returnType = TypeParameterResolver.resolveReturnType(method, type);
     // 返回类型转换成Class后添加到getTypes中
     getTypes.put(name, typeToClass(returnType));
@@ -242,9 +242,19 @@ public class Reflector {
 
   private void addSetMethods(Class<?> clazz) {
     Map<String, List<Method>> conflictingSetters = new HashMap<>();
+    // 获取clazz以及父类的所有方法
     Method[] methods = getClassMethods(clazz);
+    // 方法参数长度为1，并且是setter方法
     Arrays.stream(methods).filter(m -> m.getParameterTypes().length == 1 && PropertyNamer.isSetter(m.getName()))
+      /**
+       * 先根据方法名获取属性名，然后解决冲突的setter方法
+       * setter冲突的类型是父类的setter方法参数是泛型，
+       * 子类重写的方法参数是具体类型，这两个方法生成的唯一签名就不一样
+       *
+       * 或者是重载方法
+       */
       .forEach(m -> addMethodConflict(conflictingSetters, PropertyNamer.methodToProperty(m.getName()), m));
+    // 解决setter方法冲突
     resolveSetterConflicts(conflictingSetters);
   }
 
@@ -259,36 +269,52 @@ public class Reflector {
   private void resolveSetterConflicts(Map<String, List<Method>> conflictingSetters) {
     for (String propName : conflictingSetters.keySet()) {
       List<Method> setters = conflictingSetters.get(propName);
+      // 获取getter方法的返回类型，getter方法不存在重载的情况，
+      // 可以用getter方法的返回值类型当来推断哪个setter方法更合适
       Class<?> getterType = getTypes.get(propName);
       boolean isGetterAmbiguous = getMethods.get(propName) instanceof AmbiguousMethodInvoker;
       boolean isSetterAmbiguous = false;
       Method match = null;
       for (Method setter : setters) {
+        // setter的参数类型和getter方法的返回类型一样，认为是最合适的
         if (!isGetterAmbiguous && setter.getParameterTypes()[0].equals(getterType)) {
           // should be the best match
           match = setter;
           break;
         }
+        // 不能根据getter方法的返回类型推断，需要选一个更合适的setter方法
         if (!isSetterAmbiguous) {
           match = pickBetterSetter(match, setter, propName);
           isSetterAmbiguous = match == null;
         }
       }
+      // 找到更合适的setter方法
       if (match != null) {
+        // 添加setter方法到setMethods中以及setTypes中
         addSetMethod(propName, match);
       }
     }
   }
 
+  /**
+   * 从两个setter方法中选一个更合适的
+   * @param setter1
+   * @param setter2
+   * @param property
+   * @return
+   */
   private Method pickBetterSetter(Method setter1, Method setter2, String property) {
     if (setter1 == null) {
       return setter2;
     }
     Class<?> paramType1 = setter1.getParameterTypes()[0];
     Class<?> paramType2 = setter2.getParameterTypes()[0];
+    // 参数2是参数1的子类，则参数2更合适
     if (paramType1.isAssignableFrom(paramType2)) {
       return setter2;
-    } else if (paramType2.isAssignableFrom(paramType1)) {
+    }
+    // 参数1是参数2的子类，则参数1更合适
+    else if (paramType2.isAssignableFrom(paramType1)) {
       return setter1;
     }
     MethodInvoker invoker = new AmbiguousMethodInvoker(setter1,
@@ -302,9 +328,13 @@ public class Reflector {
   }
 
   private void addSetMethod(String name, Method method) {
+    // 将setter方法封装成一个MethodInvoker对象
     MethodInvoker invoker = new MethodInvoker(method);
+    // 添加到setMethods中
     setMethods.put(name, invoker);
+    // 解析参数类型
     Type[] paramTypes = TypeParameterResolver.resolveParamTypes(method, type);
+    // 将参数类型转换成Class，并添加到setTypes中
     setTypes.put(name, typeToClass(paramTypes[0]));
   }
 
@@ -313,15 +343,22 @@ public class Reflector {
     // 普通类型，可以直接使用
     if (src instanceof Class) {
       result = (Class<?>) src;
-    } else if (src instanceof ParameterizedType) {
-      // 泛型类型的，使用泛型
+    }
+    // 参数化类型，带<>的类型
+    else if (src instanceof ParameterizedType) {
+      // 获取参数类型<>的载体，也就是<>前面的值，比如Map<K, V>，获取到的就是Map
       result = (Class<?>) ((ParameterizedType) src).getRawType();
-    } else if (src instanceof GenericArrayType) {
-      // 泛型数组，使用具体类型
+    }
+    // 泛型数组类型
+    else if (src instanceof GenericArrayType) {
+      // 获取泛型类型数组的声明类型，比如List<T>[] myArray，返回的就是List<T>
       Type componentType = ((GenericArrayType) src).getGenericComponentType();
+      // 如果泛型数组类型是Class，实例化数组元素，然后获取Class对象
       if (componentType instanceof Class) {
         result = Array.newInstance((Class<?>) componentType, 0).getClass();
-      } else {
+      }
+      // 泛型数组的类型是其他泛型类型，则递归进行转换Class
+      else {
         Class<?> componentClass = typeToClass(componentType);
         result = Array.newInstance(componentClass, 0).getClass();
       }

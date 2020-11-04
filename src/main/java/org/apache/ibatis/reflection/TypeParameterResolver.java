@@ -60,21 +60,26 @@ public class TypeParameterResolver {
      * 如果方法的返回值是泛型，返回的就是参数化类型
      */
     Type returnType = method.getGenericReturnType();
-    // 返回方法所在的类的Class对象
+    // 返回定义方法所在的类的Class对象
     Class<?> declaringClass = method.getDeclaringClass();
     // 解析类型
     return resolveType(returnType, srcType, declaringClass);
   }
 
   /**
+   * @param method 要解析的方法
+   * @param srcType 要解析的方法所在的类的类型
    * @return The parameter types of the method as an array of {@link Type}s. If they have type parameters in the declaration,<br>
    *         they will be resolved to the actual runtime {@link Type}s.
    */
   public static Type[] resolveParamTypes(Method method, Type srcType) {
+    // 获取参数类型，可能是泛型参数类型
     Type[] paramTypes = method.getGenericParameterTypes();
+    // 方法所在类的类型
     Class<?> declaringClass = method.getDeclaringClass();
     Type[] result = new Type[paramTypes.length];
     for (int i = 0; i < paramTypes.length; i++) {
+      // 解析类型
       result[i] = resolveType(paramTypes[i], srcType, declaringClass);
     }
     return result;
@@ -123,21 +128,40 @@ public class TypeParameterResolver {
     }
   }
 
+  /**
+   * 解析参数化类型
+   * 参数化类型，带<>的类型，比如List<String>
+   * @param parameterizedType 要解析的类型
+   * @param srcType 要解析的类型所在类的类型
+   * @param declaringClass 要解析的类型所在的类的Class对象
+   * @return
+   */
   private static ParameterizedType resolveParameterizedType(ParameterizedType parameterizedType, Type srcType, Class<?> declaringClass) {
+    // 获取参数类型<>的载体，也就是<>前面的值，比如Map<K, V>，获取到的就是Map
     Class<?> rawType = (Class<?>) parameterizedType.getRawType();
+    // 获取参数类型的实际类型参数，比如Map<String,Integer>获取到的就是String、Integer
     Type[] typeArgs = parameterizedType.getActualTypeArguments();
     Type[] args = new Type[typeArgs.length];
+    // 挨个解析参数类型的实际类型参数
     for (int i = 0; i < typeArgs.length; i++) {
+      // 类型变量
       if (typeArgs[i] instanceof TypeVariable) {
         args[i] = resolveTypeVar((TypeVariable<?>) typeArgs[i], srcType, declaringClass);
-      } else if (typeArgs[i] instanceof ParameterizedType) {
+      }
+      // 参数化类型
+      else if (typeArgs[i] instanceof ParameterizedType) {
         args[i] = resolveParameterizedType((ParameterizedType) typeArgs[i], srcType, declaringClass);
-      } else if (typeArgs[i] instanceof WildcardType) {
+      }
+      // 通配符类型
+      else if (typeArgs[i] instanceof WildcardType) {
         args[i] = resolveWildcardType((WildcardType) typeArgs[i], srcType, declaringClass);
-      } else {
+      }
+      // 普通的Class对象
+      else {
         args[i] = typeArgs[i];
       }
     }
+    // 实例化一个参数化类型实例对象
     return new ParameterizedTypeImpl(rawType, null, args);
   }
 
