@@ -26,7 +26,7 @@ public class DefaultReflectorFactory implements ReflectorFactory {
   private boolean classCacheEnabled = true;
 
   /**
-   * Reflector的缓存映射
+   * Reflector的缓存映射，一个Class对应一个Reflector对象
    */
   private final ConcurrentMap<Class<?>, Reflector> reflectorMap = new ConcurrentHashMap<>();
 

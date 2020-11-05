@@ -28,6 +28,8 @@ import org.apache.ibatis.reflection.property.PropertyTokenizer;
 
 /**
  * 类的元数据
+ * 对类级别的元信息的封装和处理
+ * 元信息是指：类的可读、可写的属性、方法以及构造器等信息
  * @author Clinton Begin
  */
 public class MetaClass {

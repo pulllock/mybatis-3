@@ -371,18 +371,21 @@ public class Reflector {
   }
 
   private void addFields(Class<?> clazz) {
+    // 获取所有的属性
     Field[] fields = clazz.getDeclaredFields();
     for (Field field : fields) {
+      // setter方法中不包含当前属性
       if (!setMethods.containsKey(field.getName())) {
         // issue #379 - removed the check for final because JDK 1.5 allows
         // modification of final fields through reflection (JSR-133). (JGB)
         // pr #16 - final static can only be set by the classloader
         int modifiers = field.getModifiers();
         if (!(Modifier.isFinal(modifiers) && Modifier.isStatic(modifiers))) {
-          // 添加到setMethods和setTypes中
+          // 将当前属性添加到setMethods和setTypes中
           addSetField(field);
         }
       }
+      // getter方法中不包含当前属性
       if (!getMethods.containsKey(field.getName())) {
         // 添加到getMethods和getTypes中
         addGetField(field);
