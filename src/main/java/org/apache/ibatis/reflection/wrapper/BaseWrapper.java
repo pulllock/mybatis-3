@@ -24,6 +24,7 @@ import org.apache.ibatis.reflection.property.PropertyTokenizer;
 
 /**
  * @author Clinton Begin
+ * ObjectWrapper的基类
  */
 public abstract class BaseWrapper implements ObjectWrapper {
 

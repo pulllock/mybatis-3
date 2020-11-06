@@ -28,6 +28,7 @@ import org.apache.ibatis.reflection.property.PropertyTokenizer;
 
 /**
  * 普通对象的ObjectWrapper实现类
+ * 包含了对象和类的元数据
  * @author Clinton Begin
  */
 public class BeanWrapper extends BaseWrapper {

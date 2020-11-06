@@ -20,34 +20,51 @@ import java.util.Iterator;
 /**
  * 属性分词器
  * @author Clinton Begin
+ * 用来处理类似：user[0].items[0].name这种由.h和[]组合的表达式
  */
 public class PropertyTokenizer implements Iterator<PropertyTokenizer> {
 
   /**
-   * 当前字符串
+   * 比如user[0].items[0].name中的user[0]的user就是name
    */
   private String name;
+
+  /**
+   * 比如user[0].items[0].name中的user[0]
+   */
   private final String indexedName;
+
+  /**
+   * 比如user[0].items[0].name中的user[0]中的0
+   */
   private String index;
 
   /**
-   * 剩余字符串
+   * 比如user[0].items[0].name中的items[0].name
    */
   private final String children;
 
   public PropertyTokenizer(String fullname) {
+    // 第一个.
     int delim = fullname.indexOf('.');
     if (delim > -1) {
+      // 第一个点前面的是name，比如user[0].items[0].name中的user[0]
       name = fullname.substring(0, delim);
+      // 第一个点后面的是子name，比如user[0].items[0].name中的items[0].name
       children = fullname.substring(delim + 1);
-    } else {
+    }
+    // 没有点的情况
+    else {
       name = fullname;
       children = null;
     }
     indexedName = name;
+    // name中含有[]
     delim = name.indexOf('[');
     if (delim > -1) {
+      // 获取到index，比如user[0]中的0
       index = name.substring(delim + 1, name.length() - 1);
+      // name，比如user[0]中的user
       name = name.substring(0, delim);
     }
   }

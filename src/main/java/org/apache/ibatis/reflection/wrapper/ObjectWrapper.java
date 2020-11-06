@@ -23,6 +23,7 @@ import org.apache.ibatis.reflection.property.PropertyTokenizer;
 
 /**
  * @author Clinton Begin
+ * 用来包装一个对象
  */
 public interface ObjectWrapper {
 

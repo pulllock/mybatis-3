@@ -35,24 +35,46 @@ import org.apache.ibatis.reflection.property.PropertyTokenizer;
 public class MetaClass {
 
   private final ReflectorFactory reflectorFactory;
+
+  /**
+   * MetaClass封装的类对应的Reflector
+   */
   private final Reflector reflector;
 
   private MetaClass(Class<?> type, ReflectorFactory reflectorFactory) {
     this.reflectorFactory = reflectorFactory;
+    // 从ReflectorFactory中的缓存中查找type对应的Reflector，如果没有就根据type新建一个Reflector对象
     this.reflector = reflectorFactory.findForClass(type);
   }
 
+  /**
+   * 获取type对应的MetaClass
+   * @param type
+   * @param reflectorFactory
+   * @return
+   */
   public static MetaClass forClass(Class<?> type, ReflectorFactory reflectorFactory) {
     return new MetaClass(type, reflectorFactory);
   }
 
+  /**
+   * 获取一个指定的属性对应的MetaClass对象
+   * @param name
+   * @return
+   */
   public MetaClass metaClassForProperty(String name) {
-    // 获得getting方法返回的类型
+    // 从name对应的Reflector中获得getting方法的返回值类型
     Class<?> propType = reflector.getGetterType(name);
-    // 创建MetaClass对象
+    // 根据属性对应的Class类型，创建MetaClass对象
     return MetaClass.forClass(propType, reflectorFactory);
   }
 
+  /**
+   * 根据名字查询属性
+   * 可以将user[0].items[0].name转换成user.items.name
+   * @param name
+   * @return
+   */
   public String findProperty(String name) {
     // 构建属性
     StringBuilder prop = buildProperty(name, new StringBuilder());
@@ -60,14 +82,16 @@ public class MetaClass {
   }
 
   /**
-   * 获得属性
-   * @param name
+   * 根据名称获得对应属性
+   * 可以将user[0].items[0].name转换成user.items.name
+   * @param name 名称
    * @param useCamelCaseMapping
    * @return
    */
   public String findProperty(String name, boolean useCamelCaseMapping) {
     // 下划线转驼峰
     if (useCamelCaseMapping) {
+      // 将下划线替换掉
       name = name.replace("_", "");
     }
     // 获得属性
@@ -82,6 +106,12 @@ public class MetaClass {
     return reflector.getSetablePropertyNames();
   }
 
+  /**
+   * 根据名称获取setter的类型
+   * 如果是这种：user[0].items[0].name，获取的是的name的setter类型
+   * @param name
+   * @return
+   */
   public Class<?> getSetterType(String name) {
     PropertyTokenizer prop = new PropertyTokenizer(name);
     if (prop.hasNext()) {
@@ -92,6 +122,12 @@ public class MetaClass {
     }
   }
 
+  /**
+   * 根据名称获取getter的类型
+   * 如果是这种：user[0].items[0].name，获取的是的name的getter类型
+   * @param name
+   * @return
+   */
   public Class<?> getGetterType(String name) {
     PropertyTokenizer prop = new PropertyTokenizer(name);
     if (prop.hasNext()) {
@@ -194,12 +230,25 @@ public class MetaClass {
     return reflector.getSetInvoker(name);
   }
 
+  /**
+   * user[0].items[0].name
+   * 先解析user[0]，在递归解析items[0]，最后解析name
+   * 最后变成user.items.name
+   *
+   * @param name
+   * @param builder
+   * @return
+   */
   private StringBuilder buildProperty(String name, StringBuilder builder) {
-    // 对name进行分词
+    // 使用PropertyTokenizer对象对name进行分词，用来处理类似user[0].items[0].name这样的表达式
     PropertyTokenizer prop = new PropertyTokenizer(name);
     // 有子表达式
     if (prop.hasNext()) {
-      // 从caseInsensitivePropertyMap中获取属性名
+      /**
+       * 从caseInsensitivePropertyMap中获取属性名
+       * caseInsensitivePropertyMap中保存的时候不区分大小写的属性名，
+       * key是不区分大小写的属性名，value是原始属性名
+       */
       String propertyName = reflector.findPropertyName(prop.getName());
       if (propertyName != null) {
         builder.append(propertyName);

@@ -95,7 +95,7 @@ public class Reflector {
   private Constructor<?> defaultConstructor;
 
   /**
-   * 不区分大小写的所有的属性名称的集合
+   * 不区分大小写的所有的属性名称的集合，key是不区分大小的属性名，value是原始属性名
    */
   private Map<String, String> caseInsensitivePropertyMap = new HashMap<>();
 
