@@ -22,13 +22,14 @@ import java.sql.SQLException;
 
 /**
  * 类型转换处理器
+ * Java类型和JDBC类型互相转换
  * @author Clinton Begin
  */
 public interface TypeHandler<T> {
 
   /**
-   * 设置PreparedStatement的指定参数
-   * Java类型转JDBC类型
+   * 将传入的T类型转换为想要的JdbcType，
+   * 并选择调用PreparedStatement的某个set方法将数据写入数据库
    *
    * @param ps PreparedStatement对象
    * @param i 占位符位置
@@ -39,16 +40,14 @@ public interface TypeHandler<T> {
   void setParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType) throws SQLException;
 
   /**
-   * 获得ResultSet指定字段的值
-   * JDBC类型转Java类型
+   * 将从数据库中读取的数据中的某个columnName转换为T类型
    *
    * @param columnName Colunm name, when configuration <code>useColumnLabel</code> is <code>false</code>
    */
   T getResult(ResultSet rs, String columnName) throws SQLException;
 
   /**
-   * 获得ResultSet指定字段的值
-   * JDBC类型转Java类型
+   * 将从数据库中读取到的数据中某个index位置的列转换为T类型
    *
    * @param rs ResultSet对象
    * @param columnIndex 字段索引
@@ -58,8 +57,8 @@ public interface TypeHandler<T> {
   T getResult(ResultSet rs, int columnIndex) throws SQLException;
 
   /**
-   * 获得CallableStatement指定字段的值
-   * JDBC类型转Java类型
+   * 将从数据库中读取到的数据中某个index位置的列转换为T类型
+   * 使用存储过程
    *
    * @param cs CallableStatement对象，支持调用存储过程
    * @param columnIndex 字段位置

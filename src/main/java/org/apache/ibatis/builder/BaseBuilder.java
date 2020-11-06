@@ -149,6 +149,13 @@ public abstract class BaseBuilder {
     }
   }
 
+  /**
+   * 解析Class
+   * 先从typeAliasRegistry中查找，如果没有使用反射获取Class
+   * @param alias
+   * @param <T>
+   * @return
+   */
   protected <T> Class<? extends T> resolveClass(String alias) {
     if (alias == null) {
       return null;

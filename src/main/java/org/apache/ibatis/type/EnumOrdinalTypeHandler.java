@@ -22,6 +22,8 @@ import java.sql.SQLException;
 
 /**
  * @author Clinton Begin
+ * 枚举序号类型转换器
+ * 可以将枚举的顺序值和JdbcType进行转换
  */
 public class EnumOrdinalTypeHandler<E extends Enum<E>> extends BaseTypeHandler<E> {
 
@@ -41,20 +43,24 @@ public class EnumOrdinalTypeHandler<E extends Enum<E>> extends BaseTypeHandler<E
 
   @Override
   public void setNonNullParameter(PreparedStatement ps, int i, E parameter, JdbcType jdbcType) throws SQLException {
+    // 设置第i索引位置的值为枚举值对应的序号
     ps.setInt(i, parameter.ordinal());
   }
 
   @Override
   public E getNullableResult(ResultSet rs, String columnName) throws SQLException {
+    // 从数据库中读取出来的值
     int ordinal = rs.getInt(columnName);
     if (ordinal == 0 && rs.wasNull()) {
       return null;
     }
+    // 根据序号转换为枚举中的值
     return toOrdinalEnum(ordinal);
   }
 
   @Override
   public E getNullableResult(ResultSet rs, int columnIndex) throws SQLException {
+    // 从数据库中读取出来的值
     int ordinal = rs.getInt(columnIndex);
     if (ordinal == 0 && rs.wasNull()) {
       return null;
@@ -68,6 +74,7 @@ public class EnumOrdinalTypeHandler<E extends Enum<E>> extends BaseTypeHandler<E
     if (ordinal == 0 && cs.wasNull()) {
       return null;
     }
+    // 根据序号转换为枚举中的值
     return toOrdinalEnum(ordinal);
   }
 
