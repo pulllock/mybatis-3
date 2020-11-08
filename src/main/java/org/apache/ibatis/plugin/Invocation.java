@@ -20,6 +20,8 @@ import java.lang.reflect.Method;
 
 /**
  * @author Clinton Begin
+ * 用来封装调用的目标对象，调用方法，和方法参数
+ * 用于传递给拦截器，让拦截器能够得到目标对象以及调用方法等
  */
 public class Invocation {
 
@@ -45,6 +47,12 @@ public class Invocation {
     return args;
   }
 
+  /**
+   * 执行被调用方法
+   * @return
+   * @throws InvocationTargetException
+   * @throws IllegalAccessException
+   */
   public Object proceed() throws InvocationTargetException, IllegalAccessException {
     return method.invoke(target, args);
   }

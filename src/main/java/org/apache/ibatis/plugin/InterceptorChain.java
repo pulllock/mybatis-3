@@ -21,11 +21,24 @@ import java.util.List;
 
 /**
  * @author Clinton Begin
+ * 拦截器链，可以一下将很多个拦截器插入到目标对象中去
  */
 public class InterceptorChain {
 
   private final List<Interceptor> interceptors = new ArrayList<>();
 
+  /**
+   * 将很多个拦截器插入到目标对象中去
+   *
+   * MyBatis会在创建Executor对象、ParameterHandler对象、ResultSet对象、StatementHandler对象的时候调用该方法，
+   * 为这几个对象添加拦截器。
+   * 也可认为MyBatis默认允许拦截Executor、ParameterHandler、ResultSet、StatementHandler这四个接口实现类的
+   * Executor来执行sql，Executor创建的时候会创建StatementHandler、ParameterHandler、ResultSetHandler对象，
+   * ParameterHandler用来设置sql语句中的占位符参数，StatementHandler用来执行sql语句，ResultSetHandler封装执行结果，
+   * 这几个就可以覆盖了整个sql的执行流程
+   * @param target
+   * @return
+   */
   public Object pluginAll(Object target) {
     for (Interceptor interceptor : interceptors) {
       target = interceptor.plugin(target);
@@ -33,6 +46,11 @@ public class InterceptorChain {
     return target;
   }
 
+  /**
+   * 添加拦截器到链接器链中
+   * 拦截器来源只有mybatis-config.xml配置文件中的plugins标签里面写的拦截器
+   * @param interceptor
+   */
   public void addInterceptor(Interceptor interceptor) {
     interceptors.add(interceptor);
   }

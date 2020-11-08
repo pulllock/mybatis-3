@@ -19,6 +19,7 @@ import java.util.Properties;
 
 /**
  * @author Clinton Begin
+ * 拦截器，在目标对象方法前后执行拦截器的逻辑
  */
 public interface Interceptor {
 
@@ -31,7 +32,7 @@ public interface Interceptor {
   Object intercept(Invocation invocation) throws Throwable;
 
   /**
-   * 决定是否触发intercept方法
+   * 给目标对象添加当前的拦截器
    * @param target
    * @return
    */
