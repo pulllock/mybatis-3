@@ -30,22 +30,44 @@ import org.apache.ibatis.session.Configuration;
 
 /**
  * @author Eduardo Macarron
+ * MyBatis默认的语言驱动器、解析器，从xml中解析sql
  */
 public class XMLLanguageDriver implements LanguageDriver {
 
+  /**
+   * 创建一个默认的ParameterHandler
+   * @param mappedStatement The mapped statement that is being executed
+   * @param parameterObject The input parameter object (can be null)
+   * @param boundSql The resulting SQL once the dynamic language has been executed.
+   * @return
+   */
   @Override
   public ParameterHandler createParameterHandler(MappedStatement mappedStatement, Object parameterObject, BoundSql boundSql) {
     return new DefaultParameterHandler(mappedStatement, parameterObject, boundSql);
   }
 
+  /**
+   * 从xml中解析sql脚本，并返回一个SqlSource对象
+   * @param configuration The MyBatis configuration
+   * @param script XNode parsed from a XML file
+   * @param parameterType input parameter type got from a mapper method or specified in the parameterType xml attribute. Can be null.
+   * @return
+   */
   @Override
   public SqlSource createSqlSource(Configuration configuration, XNode script, Class<?> parameterType) {
-    // 创建一个XMLScriptBuilder对象
+    // 创建一个XMLScriptBuilder对象，来解析xml中的sql脚本，同时还初始化了一些NodeHandler
     XMLScriptBuilder builder = new XMLScriptBuilder(configuration, script, parameterType);
-    // 解析sql节点
+    // 使用XMLScriptBuilder解析xml中的sql节点
     return builder.parseScriptNode();
   }
 
+  /**
+   * 从注解中解析sql脚本，并返回一个SqlSource对象
+   * @param configuration The MyBatis configuration
+   * @param script The content of the annotation
+   * @param parameterType input parameter type got from a mapper method or specified in the parameterType xml attribute. Can be null.
+   * @return
+   */
   @Override
   public SqlSource createSqlSource(Configuration configuration, String script, Class<?> parameterType) {
     // issue #3

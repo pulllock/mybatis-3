@@ -23,6 +23,14 @@ import org.apache.ibatis.parsing.XNode;
 import org.apache.ibatis.scripting.defaults.DefaultParameterHandler;
 import org.apache.ibatis.session.Configuration;
 
+/**
+ * 语言驱动器、SQL语言解析器
+ * 用来解析SQL语句
+ * 支持可插拔的脚本语言，可以使用某种脚本语言来写动态sql，
+ * 然后实现一个LanguageDriver来解析这种脚本语言
+ *
+ * MyBatis提供了XML、Raw、Velocity三种
+ */
 public interface LanguageDriver {
 
   /**
@@ -34,6 +42,8 @@ public interface LanguageDriver {
    * @return
    * @author Frank D. Martinez [mnesarco]
    * @see DefaultParameterHandler
+   * 创建一个ParameterHandler对象
+   * 将实际参数传递给JDBC Statement
    */
   ParameterHandler createParameterHandler(MappedStatement mappedStatement, Object parameterObject, BoundSql boundSql);
 
@@ -45,6 +55,7 @@ public interface LanguageDriver {
    * @param script XNode parsed from a XML file
    * @param parameterType input parameter type got from a mapper method or specified in the parameterType xml attribute. Can be null.
    * @return
+   * 解析XML中读取到的语句并返回一个SqlSource对象
    */
   SqlSource createSqlSource(Configuration configuration, XNode script, Class<?> parameterType);
 
@@ -56,6 +67,7 @@ public interface LanguageDriver {
    * @param script The content of the annotation
    * @param parameterType input parameter type got from a mapper method or specified in the parameterType xml attribute. Can be null.
    * @return
+   * 解析注解中读取到的语句并返回一个SqlSource对象
    */
   SqlSource createSqlSource(Configuration configuration, String script, Class<?> parameterType);
 

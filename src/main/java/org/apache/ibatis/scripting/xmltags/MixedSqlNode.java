@@ -19,6 +19,8 @@ import java.util.List;
 
 /**
  * @author Clinton Begin
+ * 混合的SqlNode
+ * 保存了了各种类型的SqlNode，相当于一个List
  */
 public class MixedSqlNode implements SqlNode {
 

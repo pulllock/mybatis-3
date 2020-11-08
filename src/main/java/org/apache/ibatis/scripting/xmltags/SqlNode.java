@@ -16,7 +16,7 @@
 package org.apache.ibatis.scripting.xmltags;
 
 /**
- * sql语句中定义的动态sql结点和文本借点等
+ * sql语句中定义的动态sql结点和文本结点等
  * @author Clinton Begin
  */
 public interface SqlNode {

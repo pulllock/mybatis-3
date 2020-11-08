@@ -43,10 +43,17 @@ public class XMLScriptBuilder extends BaseBuilder {
     this(configuration, context, null);
   }
 
+  /**
+   * 初始化XMLScriptBuilder，并初始化一些NodeHandler
+   * @param configuration
+   * @param context
+   * @param parameterType
+   */
   public XMLScriptBuilder(Configuration configuration, XNode context, Class<?> parameterType) {
     super(configuration);
     this.context = context;
     this.parameterType = parameterType;
+    // 初始化NodeHandler
     initNodeHandlerMap();
   }
 
@@ -64,12 +71,15 @@ public class XMLScriptBuilder extends BaseBuilder {
   }
 
   /**
-   * 解析sql节点
+   * 从xml中解析sql语句
    * @return
    */
   public SqlSource parseScriptNode() {
-    // 先判断当前结点是不是有动态SQL，动态SQL会包括占位符或是动态SQL的相关节点
-    // 并将SqlNode包装成MixedSqlNode
+    /**
+     * 解析动态标签
+     * 先判断当前结点是不是有动态SQL，动态SQL会包括占位符或是动态SQL的相关节点
+     * 并将SqlNode包装成MixedSqlNode
+     */
     MixedSqlNode rootSqlNode = parseDynamicTags(context);
     SqlSource sqlSource;
     // 根据是否是动态sql来创建sqlSource对象
@@ -81,6 +91,11 @@ public class XMLScriptBuilder extends BaseBuilder {
     return sqlSource;
   }
 
+  /**
+   * 解析动态标签
+   * @param node
+   * @return
+   */
   protected MixedSqlNode parseDynamicTags(XNode node) {
     List<SqlNode> contents = new ArrayList<>();
     NodeList children = node.getNode().getChildNodes();
