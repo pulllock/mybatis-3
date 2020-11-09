@@ -22,6 +22,7 @@ import org.apache.ibatis.session.Configuration;
 
 /**
  * @author Clinton Begin
+ * set标签节点
  */
 public class SetSqlNode extends TrimSqlNode {
 

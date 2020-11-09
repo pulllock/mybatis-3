@@ -40,6 +40,10 @@ import org.apache.ibatis.session.Configuration;
 public class XMLStatementBuilder extends BaseBuilder {
 
   private final MapperBuilderAssistant builderAssistant;
+
+  /**
+   * select insert update delete节点
+   */
   private final XNode context;
   private final String requiredDatabaseId;
 
@@ -94,7 +98,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     // 获取parameterType对应的类
     Class<?> parameterTypeClass = resolveClass(parameterType);
 
-    // lang对一个的LangDriver对象
+    // lang对应一个LangDriver对象，LanguageDriver用来解析SQL语句
     String lang = context.getStringAttribute("lang");
     // Configuration实例化的时候，注册了默认的XMLLanguageDriver，同时也注册一个RawLanguageDriver
     LanguageDriver langDriver = getLanguageDriver(lang);

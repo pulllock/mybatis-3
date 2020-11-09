@@ -23,7 +23,7 @@ import org.apache.ibatis.scripting.ScriptingException;
 import org.apache.ibatis.type.SimpleTypeRegistry;
 
 /**
- * 表示的是包含'${}'占位符的动态sql节点
+ * 表示的是可能包含'${}'占位符的动态sql节点
  * @author Clinton Begin
  */
 public class TextSqlNode implements SqlNode {

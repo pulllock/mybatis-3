@@ -22,6 +22,7 @@ import org.apache.ibatis.session.Configuration;
 
 /**
  * @author Clinton Begin
+ * where标签节点
  */
 public class WhereSqlNode extends TrimSqlNode {
 

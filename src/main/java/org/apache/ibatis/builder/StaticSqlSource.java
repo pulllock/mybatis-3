@@ -23,12 +23,19 @@ import org.apache.ibatis.mapping.SqlSource;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 表示带?占位符的sql和占位符对应的参数
  * 记录的sql语句可能还有?占位符，但是可以直接提交给数据库执行
  * @author Clinton Begin
  */
 public class StaticSqlSource implements SqlSource {
 
+  /**
+   * sql语句，带有?占位符
+   */
   private final String sql;
+  /**
+   * 占位符对应的参数列表
+   */
   private final List<ParameterMapping> parameterMappings;
   private final Configuration configuration;
 

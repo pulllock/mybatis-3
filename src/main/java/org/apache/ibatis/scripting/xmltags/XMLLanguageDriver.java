@@ -49,7 +49,7 @@ public class XMLLanguageDriver implements LanguageDriver {
   /**
    * 从xml中解析sql脚本，并返回一个SqlSource对象
    * @param configuration The MyBatis configuration
-   * @param script XNode parsed from a XML file
+   * @param script XNode parsed from a XML file 是select insert update delete等节点
    * @param parameterType input parameter type got from a mapper method or specified in the parameterType xml attribute. Can be null.
    * @return
    */
