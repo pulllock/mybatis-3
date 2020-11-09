@@ -21,6 +21,8 @@ import org.apache.ibatis.mapping.SqlSource;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 动态sql语句封装，运行时需要根据参数、标签或者${}等处理后才能生成最后要执行的静态sql语句
+ *
  * 处理动态sql语句，最后会将处理后的sql语句封装成StaticSqlSource返回，是在实际执行sql语句的之前执行
  *
  * 封装的sql还需进行一些列的解析，才可以形成数据库可执行的sql语句

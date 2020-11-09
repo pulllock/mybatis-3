@@ -18,15 +18,17 @@ package org.apache.ibatis.mapping;
 /**
  * Represents the content of a mapped statement read from an XML file or an annotation.
  * It creates the SQL that will be passed to the database out of the input parameter received from the user.
- * 表示映射文件或注解中定义的SQL语句，这些SQL语句是不能直接被数据库执行的，
+ * 表示mapper文件或注解中定义的SQL语句，这些SQL语句是不能直接被数据库执行的，
  * 可能含有动态sql语句相关结点或者是占位符等需要解析的元素
+ *
+ * SqlSourceBuilder.parse方法用来创建SqlSource，并将#{}转换为?，还记录了对应的参数
  *
  * @author Clinton Begin
  */
 public interface SqlSource {
 
   /**
-   * 根据映射文件或者注解中的sql语句以及参数，返回可执行的sql
+   * 根据mapper文件或者注解中的sql语句以及参数，返回可执行的sql
    * BoundSql中封装了包含?占位符的sql语句以及绑定的实参
    * @param parameterObject
    * @return

@@ -24,6 +24,7 @@ import org.apache.ibatis.type.SimpleTypeRegistry;
 
 /**
  * 表示的是可能包含'${}'占位符的动态sql节点
+ * 将${}转换为实际参数值，并返回拼接后的sql
  * @author Clinton Begin
  */
 public class TextSqlNode implements SqlNode {
@@ -68,6 +69,11 @@ public class TextSqlNode implements SqlNode {
       this.injectionFilter = injectionFilter;
     }
 
+    /**
+     * 将${}中的值替换为实际参数值
+     * @param content 要处理的token
+     * @return
+     */
     @Override
     public String handleToken(String content) {
       // 获取用户提供的实参

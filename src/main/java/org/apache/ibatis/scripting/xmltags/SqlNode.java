@@ -16,7 +16,9 @@
 package org.apache.ibatis.scripting.xmltags;
 
 /**
- * sql语句中定义的动态sql结点和文本结点等
+ * 用来处理select、insert、update、delete等结点下面的各种动态标签
+ * 比如：WhereSqlNode、ChooseSqlNode等等
+ * 在sql执行的时候会调用各种SqlNode的applay方法
  * @author Clinton Begin
  */
 public interface SqlNode {

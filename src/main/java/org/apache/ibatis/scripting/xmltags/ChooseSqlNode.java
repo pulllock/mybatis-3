@@ -24,7 +24,14 @@ import java.util.List;
  * @author Clinton Begin
  */
 public class ChooseSqlNode implements SqlNode {
+  /**
+   * otherwise标签中的是默认的SqlNode
+   */
   private final SqlNode defaultSqlNode;
+
+  /**
+   * when标签解析实际是IfSqlNode
+   */
   private final List<SqlNode> ifSqlNodes;
 
   public ChooseSqlNode(List<SqlNode> ifSqlNodes, SqlNode defaultSqlNode) {
@@ -34,11 +41,13 @@ public class ChooseSqlNode implements SqlNode {
 
   @Override
   public boolean apply(DynamicContext context) {
+    // 遍历所有的when结点，遇到第一个匹配的，就返回true
     for (SqlNode sqlNode : ifSqlNodes) {
       if (sqlNode.apply(context)) {
         return true;
       }
     }
+    // when中没有匹配的，就找otherwise这个默认的逻辑
     if (defaultSqlNode != null) {
       defaultSqlNode.apply(context);
       return true;

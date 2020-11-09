@@ -28,6 +28,8 @@ import org.apache.ibatis.session.Configuration;
 /**
  * Static SqlSource. It is faster than {@link DynamicSqlSource} because mappings are
  * calculated during startup.
+ * 原始静态sql语句封装，加载的时候就已经确定了sql语句，没有动态标签以及${}等的处理
+ *
  * 处理静态sql语句，最后会将处理后的sql语句封装成StaticSqlSource返回，在MyBatis初始化时完成sql语句的解析
  *
  * 如果只包含'#{}'占位符，而不包含动态sql或未解析的'${}'占位符，则不是动态sql语句
