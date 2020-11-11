@@ -82,6 +82,7 @@ public class GenericTokenParser {
           builder.append(src, start, src.length - start);
           offset = src.length;
         } else {
+          // 将#{}中的参数进行解析，解析成ParameterMapping对象，并将#{}替换成?拼接到sql中
           builder.append(handler.handleToken(expression.toString()));
           offset = end + closeToken.length();
         }

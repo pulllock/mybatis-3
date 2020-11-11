@@ -44,16 +44,16 @@ public class SqlSourceBuilder extends BaseBuilder {
   }
 
   /**
-   *
-   * @param originalSql 经过SqlNode.apply()方法处理之后的sql语句
+   * 解析原始sql语句，将#{}替换为?，并且记录?对应的参数类型
+   * @param originalSql 经过SqlNode.apply()方法处理之后的sql语句，这是sql语句里还含有#{}占位符
    * @param parameterType 用户传入的实参类型
    * @param additionalParameters 形参与实参的对应关系，就是经过SqlNode.apply()方法处理后的DynamicContext.bindings集合
    * @return
    */
   public SqlSource parse(String originalSql, Class<?> parameterType, Map<String, Object> additionalParameters) {
-    // 解析#{}占位符中的参数属性以及替换占位符的核心
+    // 用来解析#{}占位符中的参数属性以及替换占位符
     ParameterMappingTokenHandler handler = new ParameterMappingTokenHandler(configuration, parameterType, additionalParameters);
-    // 解析占位符
+    // 解析占位符，如果有#{}占位符，将占位符替换为?，并将#{}中的参数以及属性之类的解析成ParameterMapping对象，添加到parameterMappings中
     GenericTokenParser parser = new GenericTokenParser("#{", "}", handler);
     String sql = parser.parse(originalSql);
     // 创建StaticSqlSource对象，其中封装了占位符被替换成?的sql语句以及参数对应的ParameterMapping集合
@@ -95,6 +95,11 @@ public class SqlSourceBuilder extends BaseBuilder {
       return "?";
     }
 
+    /**
+     * 解析#{}占位符里面的内容，类似于#{id, javaType=int, jdbcType=NUMERIC}这种
+     * @param content
+     * @return
+     */
     private ParameterMapping buildParameterMapping(String content) {
       // 解析参数属性，形成map
       Map<String, String> propertiesMap = parseParameterMapping(content);
@@ -118,6 +123,7 @@ public class SqlSourceBuilder extends BaseBuilder {
           propertyType = Object.class;
         }
       }
+      // 进行ParameterMapping对象创建，包含了#{}中所有的属性
       ParameterMapping.Builder builder = new ParameterMapping.Builder(configuration, property, propertyType);
       Class<?> javaType = propertyType;
       String typeHandlerAlias = null;

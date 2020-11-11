@@ -41,6 +41,9 @@ import org.apache.ibatis.session.Configuration;
  */
 public class RawSqlSource implements SqlSource {
 
+  /**
+   * 是一个StaticSqlSource，其中封装了占位符被替换成?的sql语句以及参数对应的ParameterMapping集合
+   */
   private final SqlSource sqlSource;
 
   /**
@@ -52,6 +55,8 @@ public class RawSqlSource implements SqlSource {
   public RawSqlSource(Configuration configuration, SqlNode rootSqlNode, Class<?> parameterType) {
     /**
      * 先调用getSql方法，其中会调用SqlNode.apply方法完成sql语句的拼装和初步处理
+     * getSql方法返回的sql是拼装好的原始的sql，包含#{}占位符
+     *
      * rootSqlNode中包含的各种SqlNode都是从xml中解析出来的原始的节点数据
      */
     this(configuration, getSql(configuration, rootSqlNode), parameterType);
@@ -60,14 +65,19 @@ public class RawSqlSource implements SqlSource {
   public RawSqlSource(Configuration configuration, String sql, Class<?> parameterType) {
     SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
     Class<?> clazz = parameterType == null ? Object.class : parameterType;
-    // 完成占位符的替换和ParameterMapping的创建
+    /**
+     * 完成占位符的替换和ParameterMapping的创建
+     * 会将sql中#{}替换为?，并且记录?对应的参数类型
+     *
+     * 返回的是一个StaticSqlSource
+     */
     sqlSource = sqlSourceParser.parse(sql, clazz, new HashMap<>());
   }
 
   private static String getSql(Configuration configuration, SqlNode rootSqlNode) {
     // 静态sql文本，没有参数
     DynamicContext context = new DynamicContext(configuration, null);
-    // StaticTextSqlNode，直接返回sql
+    // 不同类型的SqlNode执行apply方法，最后都会是StaticTextSqlNode，直接返回sql
     rootSqlNode.apply(context);
     return context.getSql();
   }
