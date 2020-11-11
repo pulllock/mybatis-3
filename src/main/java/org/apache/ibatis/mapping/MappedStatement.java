@@ -311,8 +311,9 @@ public final class MappedStatement {
    * @return
    */
   public BoundSql getBoundSql(Object parameterObject) {
-    // 从SqlSource中解析，SqlSource有几种不同实现，根据我们使用，解析的时候会创建不同对象
+    // 从SqlSource中解析，SqlSource是在mapper文件解析的时候得到的，可能是RawSqlSource或者是DynamicSqlSouce
     BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
+    // 获取sql中占位符对应的参数映射关系
     List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
     if (parameterMappings == null || parameterMappings.isEmpty()) {
       boundSql = new BoundSql(configuration, boundSql.getSql(), parameterMap.getParameterMappings(), parameterObject);
