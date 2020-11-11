@@ -51,6 +51,7 @@ public class XMLLanguageDriver implements LanguageDriver {
    * @param configuration The MyBatis configuration
    * @param script XNode parsed from a XML file 是select insert update delete等节点
    * @param parameterType input parameter type got from a mapper method or specified in the parameterType xml attribute. Can be null.
+   *                      mapper节点中指定的参数类型
    * @return
    */
   @Override

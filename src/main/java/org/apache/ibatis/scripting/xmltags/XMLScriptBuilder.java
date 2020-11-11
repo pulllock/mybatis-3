@@ -52,8 +52,8 @@ public class XMLScriptBuilder extends BaseBuilder {
   /**
    * 初始化XMLScriptBuilder，并初始化一些NodeHandler
    * @param configuration
-   * @param context
-   * @param parameterType
+   * @param context select,insert,delete,update等结点
+   * @param parameterType 参数类型
    */
   public XMLScriptBuilder(Configuration configuration, XNode context, Class<?> parameterType) {
     super(configuration);
@@ -87,6 +87,9 @@ public class XMLScriptBuilder extends BaseBuilder {
      * 并将SqlNode包装成MixedSqlNode
      *
      * context是select insert update delete等节点
+     *
+     * 这里解析只是把xml节点中的原始sql都解析出来，封装成一个个的SqlNode，
+     * 其中的where、choose等等动态标签也会被解析成SqlNode
      */
     MixedSqlNode rootSqlNode = parseDynamicTags(context);
     SqlSource sqlSource;
@@ -95,7 +98,7 @@ public class XMLScriptBuilder extends BaseBuilder {
       // 动态sql，创建DynamicSqlSource对象
       sqlSource = new DynamicSqlSource(configuration, rootSqlNode);
     } else {
-      // 纯静态文本sql，创建RawSqlSource
+      // 纯静态文本sql，创建RawSqlSource对象，
       sqlSource = new RawSqlSource(configuration, rootSqlNode, parameterType);
     }
     return sqlSource;

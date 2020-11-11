@@ -43,8 +43,17 @@ public class RawSqlSource implements SqlSource {
 
   private final SqlSource sqlSource;
 
+  /**
+   *
+   * @param configuration
+   * @param rootSqlNode 一个select、update、delete、insert节点下面的所有的SqlNode集合
+   * @param parameterType 参数类型
+   */
   public RawSqlSource(Configuration configuration, SqlNode rootSqlNode, Class<?> parameterType) {
-    // 先调用getSql方法，其中会调用SqlNode.apply方法完成sql语句的拼装和初步处理
+    /**
+     * 先调用getSql方法，其中会调用SqlNode.apply方法完成sql语句的拼装和初步处理
+     * rootSqlNode中包含的各种SqlNode都是从xml中解析出来的原始的节点数据
+     */
     this(configuration, getSql(configuration, rootSqlNode), parameterType);
   }
 

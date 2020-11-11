@@ -122,7 +122,10 @@ public class XMLStatementBuilder extends BaseBuilder {
           ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
     }
 
-    // 创建SqlSource，默认XMLLanguageDriver
+    /**
+     * 创建SqlSource，默认XMLLanguageDriver
+     * 从xml中提取出原始的sql
+     */
     SqlSource sqlSource = langDriver.createSqlSource(configuration, context, parameterTypeClass);
     // 可选 STATEMENT，PREPARED 或 CALLABLE。这会让 MyBatis 分别使用 Statement，
     // PreparedStatement 或 CallableStatement，默认值：PREPARED。

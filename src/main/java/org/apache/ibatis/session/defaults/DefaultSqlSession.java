@@ -171,7 +171,7 @@ public class DefaultSqlSession implements SqlSession {
   @Override
   public <E> List<E> selectList(String statement, Object parameter, RowBounds rowBounds) {
     try {
-      // 根据MappedStatement的id从Configuration中获取对应的MappedStatement
+      // 根据MappedStatement的id从Configuration中获取对应的MappedStatement，MappedStatement在mapper解析的时候添加的
       MappedStatement ms = configuration.getMappedStatement(statement);
       // 使用具体的执行器来执行sql，执行器默认是simple，如果有缓存的的话是cache
       // 如果是集合或数组，使用一个map包装一下
