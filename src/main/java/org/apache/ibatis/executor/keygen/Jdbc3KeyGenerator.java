@@ -69,7 +69,7 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
 
   @Override
   public void processAfter(Executor executor, MappedStatement ms, Statement stmt, Object parameter) {
-    // 将sql语句执行后生成的主见记录到用户传递的实参中
+    // 将sql语句执行后生成的主键记录到用户传递的实参中
     processBatch(ms, stmt, parameter);
   }
 
@@ -79,7 +79,7 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
     if (keyProperties == null || keyProperties.length == 0) {
       return;
     }
-    // 获取数据库自动生成的主见，如果没有生成主键，则返回结果集为空
+    // 获取数据库自动生成的主键，如果没有生成主键，则返回结果集为空
     try (ResultSet rs = stmt.getGeneratedKeys()) {
       final ResultSetMetaData rsmd = rs.getMetaData();
       final Configuration configuration = ms.getConfiguration();

@@ -166,7 +166,16 @@ public abstract class BaseExecutor implements Executor {
      * 其中sql中含有?占位符
      */
     BoundSql boundSql = ms.getBoundSql(parameter);
-    // 创建CacheKey
+    /**
+     * 创建CacheKey
+     * CacheKey组成：
+     * -1225560967:1825391264:com.xxxx.dao.mapper.JobDOMapper.selectByStatus:0:2147483647:select
+     *
+     *     id
+     *
+     *     from xxx
+     *     where status = ?:1:SqlSessionFactoryBean
+     */
     CacheKey key = createCacheKey(ms, parameter, rowBounds, boundSql);
     // 查询
     return query(ms, parameter, rowBounds, resultHandler, key, boundSql);

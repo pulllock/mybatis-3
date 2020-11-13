@@ -50,7 +50,10 @@ public class MapperMethod {
   private final MethodSignature method;
 
   public MapperMethod(Class<?> mapperInterface, Method method, Configuration config) {
-    // 实例化一个SqlCommand对象，并解析sql对应的类型，是insert还是select等
+    /**
+     * 实例化一个SqlCommand对象，并解析sql对应的类型，是insert还是select等，
+     * 实际上是从MappedStatement中获取的，在mapper文件解析的时候就被设置了
+     */
     this.command = new SqlCommand(config, mapperInterface, method);
     // 实例化一个MethodSignature对象，这里面会设置返回的一些属性，比如返回是否是多个，返回是否是空等等
     this.method = new MethodSignature(config, mapperInterface, method);
@@ -64,7 +67,7 @@ public class MapperMethod {
    */
   public Object execute(SqlSession sqlSession, Object[] args) {
     Object result;
-    // type在SqlCommand对象实例化的时候进行解析
+    // type在SqlCommand对象实例化的时候进行解析，实际上是在解析Mapper文件的时候解析的，存放在MappedStatement对象中
     switch (command.getType()) {
       // insert方法
       case INSERT: {
@@ -86,16 +89,27 @@ public class MapperMethod {
       }
       // select方法
       case SELECT:
+        // 方法返回void，并且有ResultHandler
         if (method.returnsVoid() && method.hasResultHandler()) {
           executeWithResultHandler(sqlSession, args);
           result = null;
-        } else if (method.returnsMany()) {
+        }
+        // 返回多个结果
+        else if (method.returnsMany()) {
+          // 执行返回多个结果的查询
           result = executeForMany(sqlSession, args);
-        } else if (method.returnsMap()) {
+        }
+        // 返回的是Map
+        else if (method.returnsMap()) {
           result = executeForMap(sqlSession, args);
-        } else if (method.returnsCursor()) {
+        }
+        // 返回的Cursor
+        else if (method.returnsCursor()) {
           result = executeForCursor(sqlSession, args);
-        } else {
+        }
+        // 返回的是一个结果
+        else {
+          // 将参数转换为
           Object param = method.convertArgsToSqlCommandParam(args);
           // name是MappedStatement的id
           result = sqlSession.selectOne(command.getName(), param);
@@ -152,13 +166,32 @@ public class MapperMethod {
     }
   }
 
+  /**
+   * 执行返回多个结果的查询
+   * @param sqlSession
+   * @param args 查询时需要的参数
+   * @param <E>
+   * @return
+   */
   private <E> Object executeForMany(SqlSession sqlSession, Object[] args) {
     List<E> result;
+    /**
+     * 解析查询时需要的参数
+     * 使用ParamNameResolver解析查询时传进来的参数
+     * 如果没有参数，返回null
+     * 如果有一个参数，返回参数值
+     * 如果有多个参数，返回一个map，key是参数名字，value是参数值
+     */
     Object param = method.convertArgsToSqlCommandParam(args);
     if (method.hasRowBounds()) {
       RowBounds rowBounds = method.extractRowBounds(args);
       result = sqlSession.selectList(command.getName(), param, rowBounds);
     } else {
+      /**
+       * 使用DefaultSession执行查询
+       * SqlCommand的name是要执行的方法名
+       * param是要执行的方法中的参数
+       */
       result = sqlSession.selectList(command.getName(), param);
     }
     // issue #510 Collections & arrays support
@@ -340,9 +373,18 @@ public class MapperMethod {
       this.returnsMap = this.mapKey != null;
       this.rowBoundsIndex = getUniqueParamIndex(method, RowBounds.class);
       this.resultHandlerIndex = getUniqueParamIndex(method, ResultHandler.class);
+      // 实例化一个ParamNameResolver，用来解析参数的名字，实例化的时候就已经将参数解析成了一个索引和名字的对应关系
       this.paramNameResolver = new ParamNameResolver(configuration, method);
     }
 
+    /**
+     * 使用ParamNameResolver解析查询时传进来的参数
+     * 如果没有参数，返回null
+     * 如果有一个参数，返回参数值
+     * 如果有多个参数，返回一个map，key是参数名字，value是参数值
+     * @param args
+     * @return
+     */
     public Object convertArgsToSqlCommandParam(Object[] args) {
       return paramNameResolver.getNamedParams(args);
     }

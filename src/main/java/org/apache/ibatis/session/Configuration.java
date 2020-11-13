@@ -594,9 +594,22 @@ public class Configuration {
     return resultSetHandler;
   }
 
+  /**
+   * 创建一个StatementHandler对象，实际返回的是RoutingStatementHandler对象
+   * RoutingStatementHandler在实例化的时候会根据statementType来创建不同的StatementHandler对象
+   * StatementHandler对象在实例化的时候会创建ParameterHandler和ResultSetHandler对象
+   * @param executor
+   * @param mappedStatement
+   * @param parameterObject
+   * @param rowBounds
+   * @param resultHandler
+   * @param boundSql
+   * @return
+   */
   public StatementHandler newStatementHandler(Executor executor, MappedStatement mappedStatement, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
+    // 创建一个RoutingStatementHandler对象
     StatementHandler statementHandler = new RoutingStatementHandler(executor, mappedStatement, parameterObject, rowBounds, resultHandler, boundSql);
-    // 为StatementHandler对象添加拦截器，使用的是嵌套的代理
+    // 为StatementHandler对象添加拦截器，使用的是嵌套的代理，执行的时候会把所有的拦截器都执行掉
     statementHandler = (StatementHandler) interceptorChain.pluginAll(statementHandler);
     return statementHandler;
   }

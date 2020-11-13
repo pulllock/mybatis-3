@@ -59,11 +59,21 @@ public class SimpleExecutor extends BaseExecutor {
     try {
       // 获取配置对象
       Configuration configuration = ms.getConfiguration();
-      // 创建StatementHandler对象，实际返回的是RoutingStatementHandler对象
+      /**
+       * 创建StatementHandler对象，实际返回的是RoutingStatementHandler对象
+       * StatementHandler用来处理Statement，比如：Statement，PrepareStatement，CallableStatement等
+       *
+       * RoutingStatementHandler在实例化的时候会根据statementType类型实例化不同的StatementHandler对象，
+       * 同时还会执
+       *
+       * StatementHandler实例化的时候，会创建ParameterHandler和ResultSetHandler
+       */
       StatementHandler handler = configuration.newStatementHandler(wrapper, ms, parameter, rowBounds, resultHandler, boundSql);
-      // 完成Statement的创建和初始化，会先创建Statement对象，然后处理占位符
+      /**
+       * 完成Statement的创建和初始化，会先创建Statement对象，然后处理占位符
+       */
       stmt = prepareStatement(handler, ms.getStatementLog());
-      // 执行sql，并完成结果集映射
+      // 使用具体的StatementHandler执行sql，并完成结果集映射
       return handler.query(stmt, resultHandler);
     } finally {
       closeStatement(stmt);
@@ -89,9 +99,9 @@ public class SimpleExecutor extends BaseExecutor {
     Statement stmt;
     // 获取连接
     Connection connection = getConnection(statementLog);
-    // 创建Statement对象
+    // 创建Statement对象，这里是RoutingStatementHandler，会委托给具体的StatementHandler对象来处理
     stmt = handler.prepare(connection, transaction.getTimeout());
-    // 处理占位符
+    // 处理占位符，PrepareStatement类型的会使用ParameterHandler进行?的替换
     handler.parameterize(stmt);
     return stmt;
   }

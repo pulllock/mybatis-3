@@ -100,6 +100,7 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
     }
     // Mapper接口的具体方法如果没有被调用过，则创建MapperMethod对象并缓存起来
     final MapperMethod mapperMethod = cachedMapperMethod(method);
+    // 根据不同类型命令（select、insert等）调用SqlSession不同方法执行sql
     return mapperMethod.execute(sqlSession, args);
   }
 
