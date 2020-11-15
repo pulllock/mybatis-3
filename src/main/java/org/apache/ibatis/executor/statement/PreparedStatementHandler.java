@@ -64,7 +64,7 @@ public class PreparedStatementHandler extends BaseStatementHandler {
     PreparedStatement ps = (PreparedStatement) statement;
     // 底层jdbc执行查询
     ps.execute();
-    // 使用DefaultResultSetHandler进行结果集处理
+    // 使用DefaultResultSetHandler进行结果集处理，并返回处理后的结果
     return resultSetHandler.handleResultSets(ps);
   }
 

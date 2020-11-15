@@ -33,21 +33,41 @@ import org.apache.ibatis.session.Configuration;
 
 /**
  * @author Clinton Begin
+ * 结果映射
  */
 public class ResultMap {
   private Configuration configuration;
 
+  /**
+   * ResultMap的id属性，格式：namespace.id
+   */
   private String id;
+  /**
+   * ResultMap指定的类型
+   */
   private Class<?> type;
   private List<ResultMapping> resultMappings;
   private List<ResultMapping> idResultMappings;
+  /**
+   * ResultMap中对应<constructor>标签下面的ResultMapping
+   */
   private List<ResultMapping> constructorResultMappings;
+  /**
+   * ResultMap中普通的ResultMapping
+   */
   private List<ResultMapping> propertyResultMappings;
+  /**
+   * ResultMap中指定的列名字
+   */
   private Set<String> mappedColumns;
   private Set<String> mappedProperties;
   private Discriminator discriminator;
   private boolean hasNestedResultMaps;
   private boolean hasNestedQueries;
+  /**
+   * 如果设置这个属性，MyBatis 将会为本结果映射开启或者关闭自动映射。
+   * 这个属性会覆盖全局的属性 autoMappingBehavior。默认值：未设置（unset）
+   */
   private Boolean autoMapping;
 
   private ResultMap() {

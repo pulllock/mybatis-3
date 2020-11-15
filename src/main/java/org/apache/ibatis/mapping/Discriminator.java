@@ -22,6 +22,8 @@ import org.apache.ibatis.session.Configuration;
 
 /**
  * @author Clinton Begin
+ * 鉴别器
+ * 可以使用结果的值来确定使用哪个ResultMap
  */
 public class Discriminator {
 

@@ -108,6 +108,12 @@ public class Configuration {
   protected boolean aggressiveLazyLoading;
   protected boolean multipleResultSetsEnabled = true;
   protected boolean useGeneratedKeys;
+  /**
+   *使用列标签代替列名。实际表现依赖于数据库驱动，具体可参考数据库驱动的相关文档，或通过对比测试来观察。
+   * 默认true
+   *
+   * 比如select xxx as id from xxxxxx中as关键字后面的就是label，前面的就是列名
+   */
   protected boolean useColumnLabel = true;
   protected boolean cacheEnabled = true;
   protected boolean callSettersOnNulls;
