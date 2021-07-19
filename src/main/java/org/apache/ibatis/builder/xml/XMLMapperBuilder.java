@@ -137,7 +137,12 @@ public class XMLMapperBuilder extends BaseBuilder {
       cacheElement(context.evalNode("cache"));
       // 老式风格的参数映射，已经废弃
       parameterMapElement(context.evalNodes("/mapper/parameterMap"));
-      // 解析resultMap结点，描述如何从数据库结果集中加载对象，是最复杂也是最强大的元素。
+
+      /**
+       * 解析resultMap结点，描述如何从数据库结果集中加载对象，是最复杂也是最强大的元素。
+       * 将解析后的ResultMap添加到Configuration的Map<String, ResultMap> resultMaps = new StrictMap<>("Result Maps collection")
+       * 这个map中去，key是namespace+id，value是ResultMap对象
+       */
       resultMapElements(context.evalNodes("/mapper/resultMap"));
       // 解析sql结点，用来定义可重用的SQL代码片段，以便在其它语句中使用，主要是将sql片段添加到sqlFragments中去
       sqlElement(context.evalNodes("/mapper/sql"));

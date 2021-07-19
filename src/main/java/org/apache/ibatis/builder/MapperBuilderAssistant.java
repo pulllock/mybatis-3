@@ -419,7 +419,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
       boolean lazy) {
     // 解析属性的java类型
     Class<?> javaTypeClass = resolveResultJavaType(resultType, property, javaType);
-    // 根据属性的java类型，以及制定的typeHandler，来获取对应的TypeHandler实例
+    // 根据属性的java类型，以及指定的typeHandler，来获取对应的TypeHandler实例
     TypeHandler<?> typeHandlerInstance = resolveTypeHandler(javaTypeClass, typeHandler);
     // 解析组合字段名称成ResultMapping集合，涉及关联的嵌套查询
     List<ResultMapping> composites;
