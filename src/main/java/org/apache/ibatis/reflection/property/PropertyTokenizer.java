@@ -20,7 +20,7 @@ import java.util.Iterator;
 /**
  * 属性分词器
  * @author Clinton Begin
- * 用来处理类似：user[0].items[0].name这种由.h和[]组合的表达式
+ * 用来处理类似：user[0].items[0].name这种由.和[]组合的表达式
  */
 public class PropertyTokenizer implements Iterator<PropertyTokenizer> {
 

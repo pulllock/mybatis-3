@@ -48,7 +48,8 @@ import org.apache.ibatis.reflection.property.PropertyNamer;
  * MyBatis进行参数处理、结果映射处理等都会使用Java的反射操作，
  * 出于性能考虑和反射操作的复杂问题，Mybatis专门提供了反射模块，将Java反射进行封装，并进行缓存。
  *
- * 每个Reflector对应一个类，Reflector会缓存反射操作需要的类的信息等
+ * 每个Reflector对应一个类，Reflector会缓存反射操作需要的类的信息。
+ * 存储了一个类中所有的字段、getter方法、setter方法、构造方法。
  *
  * @author Clinton Begin
  */
@@ -85,7 +86,7 @@ public class Reflector {
   private final Map<String, Class<?>> setTypes = new HashMap<>();
 
   /**
-   * get方法的方法参数类型，key是属性名，value是getter方法的参数的类型
+   * get方法的方法返回值类型，key是属性名，value是getter方法的返回值的类型
    */
   private final Map<String, Class<?>> getTypes = new HashMap<>();
 

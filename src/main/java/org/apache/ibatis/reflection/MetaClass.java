@@ -29,7 +29,12 @@ import org.apache.ibatis.reflection.property.PropertyTokenizer;
 /**
  * 类的元数据
  * 对类级别的元信息的封装和处理
- * 元信息是指：类的可读、可写的属性、方法以及构造器等信息
+ * 元信息是指：类的可读、可写的属性、方法以及构造器等信息。
+ *
+ * 存储了一个Reflector和一个Reflector工厂。Reflector用来存储类的属性、getter方法、setter方法、构造防范等；
+ * Reflector工厂用来缓存类和Reflector的关系，提供生成Reflector的方法。
+ *
+ * MetaClass主要用来封装一些对Reflector元数据操作的方法。
  * @author Clinton Begin
  */
 public class MetaClass {
@@ -185,19 +190,20 @@ public class MetaClass {
   }
 
   /**
-   * 判断属性是否有getting方法
+   * 判断属性是否有set方法
    * @param name
    * @return
    */
   public boolean hasSetter(String name) {
-    // 先对name进行分词
+    // 先对name进行分词，类似这种user[0].items[0].name，要把user、item、name解析出来
     PropertyTokenizer prop = new PropertyTokenizer(name);
     // 有子表达式
     if (prop.hasNext()) {
-      // 判断是否有getting方法
+      // 判断是否有setter方法
       if (reflector.hasSetter(prop.getName())) {
+        // 获取属性prop的getter方法的返回值对应的MetaClass
         MetaClass metaProp = metaClassForProperty(prop.getName());
-        // 递归子表达式
+        // 递归子表达式，也就是会先解析user[0].items[0].name最外面的user，后续递归解析items和name
         return metaProp.hasSetter(prop.getChildren());
       } else {
         return false;
