@@ -124,6 +124,22 @@ public class XMLConfigBuilder extends BaseBuilder {
     return configuration;
   }
 
+  /**
+   * 解析完mybatis-config.xml配置文件后：
+   * 1. properties标签中的属性被解析，并赋值给Configuration的Properties variables = new Properties()属性。
+   * 2. setting标签被解析，并通过Configuration的setter方法赋值给Configuration的各个属性
+   * 3. typeAlias标签被解析，并将类型别名映射关系都保存到TypeAliasRegistry的map中。Configuration中有TypeAliasRegistry对象的引用。
+   * 4. plugin标签被解析，并将拦截器添加到InterceptorChain的list中，Configuration中有InterceptorChain对象的引用。
+   * 5. typeHandler标签被解析，javaType、jdbcType、Handler关系存储到Map<Type, Map<JdbcType, TypeHandler<?>>> typeHandlerMap = new ConcurrentHashMap<>()中；
+   *    将Handler类型和Handler类关系存储到Map<Class<?>, TypeHandler<?>> allTypeHandlersMap = new HashMap<>()中；
+   *    另外在TypeHandlerRegistry构造方法中也会预先设置一些默认的对应关系：javaType、jdbcType、Handler关系以及
+   *    jdbcType和TypeHandler的关系在Map<JdbcType, TypeHandler<?>>  jdbcTypeHandlerMap = new EnumMap<>(JdbcType.class)中；
+   *    Configuration中持有TypeHandlerRegistry对象的引用。
+   * 6. mapper标签被解析，如果是Mapper接口，则直接添加类和Mapper对应关系到MapperRegistry的knownMappers这个map中；如果是xml配置方式，则
+   *    需要先解析mapper文件，再添加类和Mapper对应关系到MapperRegistry的knownMappers这个map中，map中key是Class类型，value是对应的
+   *    MapperProxyFactory，MapperProxyFactory是Mapper代理工厂。
+   * @param root
+   */
   private void parseConfiguration(XNode root) {
     try {
       //issue #117 read properties first
@@ -211,7 +227,7 @@ public class XMLConfigBuilder extends BaseBuilder {
        * 这里会把我们自定义的TypeHandler注册到TypeHandlerRegistry中，后面解析mapper文件会使用到
        *
        * <typeHandlers>
-       *   <typeHandler handler="org.mybatis.example.ExampleTypeHandler"/>
+       *   <typeHandler javaType="String" jdbcType="VARCHAR" handler="org.mybatis.example.ExampleTypeHandler"/>
        * </typeHandlers>
        * 或者
        * <typeHandlers>
@@ -315,6 +331,12 @@ public class XMLConfigBuilder extends BaseBuilder {
         // 指定为包的，解析package属性，会扫描包下的每个类
         if ("package".equals(child.getName())) {
           String typeAliasPackage = child.getStringAttribute("name");
+          /**
+           * typeAliasRegistry在Configuration实例化的时候创建。
+           * registerAliases方法搜索package下面的所有类，并将类的名字和类对应关系，
+           * 存储到TypeAliasRegistry的名为typeAliases的Map中，key是类的简单名字，
+           * value是类对应的Class对象
+           */
           configuration.getTypeAliasRegistry().registerAliases(typeAliasPackage);
         } else {
           String alias = child.getStringAttribute("alias");
@@ -343,6 +365,7 @@ public class XMLConfigBuilder extends BaseBuilder {
         Properties properties = child.getChildrenAsProperties();
         Interceptor interceptorInstance = (Interceptor) resolveClass(interceptor).getDeclaredConstructor().newInstance();
         interceptorInstance.setProperties(properties);
+        // 将Interceptor添加到拦截器链InterceptorChain中去
         configuration.addInterceptor(interceptorInstance);
       }
     }
@@ -560,8 +583,11 @@ public class XMLConfigBuilder extends BaseBuilder {
           // 同时也会解析mapper文件
           configuration.addMappers(mapperPackage);
         } else {
+          // resource是classpath相对路径
           String resource = child.getStringAttribute("resource");
+          // url是全路径
           String url = child.getStringAttribute("url");
+          // mapper接口类的全限定名
           String mapperClass = child.getStringAttribute("class");
           // 使用相对路径的资源引用
           if (resource != null && url == null && mapperClass == null) {
