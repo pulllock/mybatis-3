@@ -25,6 +25,9 @@ import java.util.List;
  */
 public class InterceptorChain {
 
+  /**
+   * 用来保存所有的拦截器的实现
+   */
   private final List<Interceptor> interceptors = new ArrayList<>();
 
   /**
@@ -35,7 +38,15 @@ public class InterceptorChain {
    * 也可认为MyBatis默认允许拦截Executor、ParameterHandler、ResultSet、StatementHandler这四个接口实现类的
    * Executor来执行sql，Executor创建的时候会创建StatementHandler、ParameterHandler、ResultSetHandler对象，
    * ParameterHandler用来设置sql语句中的占位符参数，StatementHandler用来执行sql语句，ResultSetHandler封装执行结果，
-   * 这几个就可以覆盖了整个sql的执行流程
+   * 这几个就可以覆盖了整个sql的执行流程。
+   *
+   * 允许拦截的有如下：
+   * Executor (update, query, flushStatements, commit, rollback, getTransaction, close, isClosed)
+   * ParameterHandler (getParameterObject, setParameters)
+   * ResultSetHandler (handleResultSets, handleOutputParameters)
+   * StatementHandler (prepare, parameterize, batch, update, query)
+   *
+   * 基于动态代理的拦截器链（责任链）
    * @param target
    * @return
    */
@@ -49,6 +60,7 @@ public class InterceptorChain {
   /**
    * 添加拦截器到链接器链中
    * 拦截器来源只有mybatis-config.xml配置文件中的plugins标签里面写的拦截器
+   * 解析配置文件的时候，会调用addInterceptor方法将定义的Interceptor添加到interceptors这个list中
    * @param interceptor
    */
   public void addInterceptor(Interceptor interceptor) {

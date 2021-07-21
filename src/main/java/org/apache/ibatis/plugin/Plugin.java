@@ -57,15 +57,26 @@ public class Plugin implements InvocationHandler {
    * 获取一个代理类实例
    * 这里面会根据Interceptor具体实现上注解的@Interceptors里面指定的接口和方法
    * 来找到要代理的接口和方法，根据这些信息来生成一个代理对象
-   * @param target
-   * @param interceptor
+   *
+   * @Intercepts({@Signature(
+   *   type= Executor.class,
+   *   method = "update",
+   *   args = {MappedStatement.class,Object.class})})
+   * public class ExamplePlugin implements Interceptor {
+   *
+   * }
+   * @param target 要拦截的对象
+   * @param interceptor 拦截器
    * @return
    */
   public static Object wrap(Object target, Interceptor interceptor) {
     // 在Intercepts注解里面指定的要拦截对象的接口类型以及要拦截的方法
     Map<Class<?>, Set<Method>> signatureMap = getSignatureMap(interceptor);
+    // 要拦截的对象的类型
     Class<?> type = target.getClass();
+    // 找一下Intercepts注解中有没有要拦截的对象的类型
     Class<?>[] interfaces = getAllInterfaces(type, signatureMap);
+    // 需要拦截target，则创建一个动态代理
     if (interfaces.length > 0) {
       return Proxy.newProxyInstance(
           type.getClassLoader(),
